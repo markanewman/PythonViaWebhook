@@ -43,6 +43,7 @@ $deploy = New-AzureRMResourceGroupDeployment `
 	-vmUser $user `
 	-vmPassword $password `
 	-vmCount $vmCount `
+	-Verbose `
 	-ErrorAction Stop `
 	-Force
 
