@@ -1,0 +1,63 @@
+# Introduction
+Creates a hosting environment for the Console App Via Webhook application
+
+## Deploy via PowerShell
+1. Build the Project in VS2017
+2. Open Windows Power Shell
+3. Change to Project directory
+4. Setup the runtime environment
+```{posh}
+Login-AzureRmAccount
+Set-AzureRmContext -SubscriptionName "My MSDN"
+```
+5. Decide on your settings
+```{posh}
+$resourceGroupName = "ConsoleAppViaWebhook"
+$location = "SouthCentralUS"
+$addressSpace = "10.0.0.0"
+$baseName = 'cavw'
+$user = $baseName
+$password = $pass = $(new-guid).Guid;$pass
+$vmCount = 1
+```
+6. Deploy the hosting environment
+```{posh}
+. ./Azure-Deploy.ps1
+```
+7. Generate the [certs][p2scerts] and [import][p2scertimport] into Azure
+```{posh}
+# $deploy comes from . ./Azure-Deploy.ps1
+$resourceGroupName = $deploy.Outputs['ResourceGroupName'].Value
+$virtualNetworkGatewayName = $deploy.Outputs['GatewayName'].Value
+$cn = "Azure P2S CAVW"
+
+$cert = New-SelfSignedCertificate -Type Custom -KeySpec Signature `
+	-Subject "CN=$cn Root Cert" -KeyExportPolicy Exportable `
+	-HashAlgorithm sha256 -KeyLength 2048 `
+	-CertStoreLocation "Cert:\CurrentUser\My" `
+	-KeyUsageProperty Sign -KeyUsage CertSign
+New-SelfSignedCertificate -Type Custom -DnsName "$cn Child Cert" -KeySpec Signature `
+	-Subject "CN=$cn Child Cert" -KeyExportPolicy Exportable `
+	-HashAlgorithm sha256 -KeyLength 2048 `
+	-CertStoreLocation "Cert:\CurrentUser\My" `
+	-Signer $cert -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.2')
+
+$file = $(New-TemporaryFile).Name
+Export-Certificate -Type CERT -Cert $cert -FilePath $file
+$cert = new-object System.Security.Cryptography.X509Certificates.X509Certificate2($file)
+$certBase64 = [system.convert]::ToBase64String($cert.RawData)
+Remove-Item –path $file
+
+# $gateway = Get-AzureRmVirtualNetworkGateway -ResourceGroupName $resourceGroupName -Name $virtualNetworkGatewayName 
+# Set-AzureRmVirtualNetworkGatewayVpnClientConfig -VirtualNetworkGateway $gateway -VpnClientAddressPool "10.1.0.248/29"
+
+Add-AzureRmVpnClientRootCertificate `
+	-VpnClientRootCertificateName "Default" `
+	-VirtualNetworkGateway $deploy.Outputs['GatewayName'].Value `
+	-ResourceGroupName $deploy.Outputs['ResourceGroupName'].Value `
+	-PublicCertData $certBase64
+```
+
+---------
+[p2scertimport]: https://docs.microsoft.com/en-us/azure/vpn-gateway/vpn-gateway-howto-point-to-site-rm-ps
+[p2scerts]: https://docs.microsoft.com/en-us/azure/vpn-gateway/vpn-gateway-certificates-point-to-site

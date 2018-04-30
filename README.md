@@ -6,7 +6,7 @@ This repo was started because I wanted to be able to run a console app for which
 
 1. A [Virtual Machine][vm] (VM) that will allow the console app to remain unchanged. This is a real advantage as devolopment tools, custom file locations, and other ["It works on my machine"][works] settings can be applied.
 2. A [Virtual Network][vnet] (VNET) to provide simple security.
-3. An [Azure Function][func] to serve as the [WebHook][webhook] frontend. It will accept files to be processed and a URL callback. There will also be a status endpoint in case polling is more your thing.
+3. An [Azure Function][func] to serve as the [Webhook][webhook] frontend. It will accept files to be processed and a URL callback. There will also be a status endpoint in case polling is more your thing.
 4. A console app that is [web aware][webaware] to bridge the gap between old and new.
 5. An [Azure Storage][storage] account to tie everything together.
 
@@ -14,13 +14,13 @@ This repo was started because I wanted to be able to run a console app for which
 
 As part of the initial setup, the service owner needs to provide the service user a URL and an access token.
 
-1. The client makes a [multipart form post][multipart] (HTTP POST) to the [WebHook][webhook] URL; passing in an optional callback URL.
-2. The [WebHook][webhook] writes the information to [blob storage][blob], places a message in the [queue][queue], and returns 202(accepted) with location where the result will eventualy be placed.
+1. The client makes a [multipart form post][multipart] (HTTP POST) to the [Webhook][webhook] URL; passing in an optional callback URL.
+2. The [Webhook][webhook] writes the information to [blob storage][blob], places a message in the [queue][queue], and returns 202(accepted) with location where the result will eventualy be placed.
 3. The [web aware][webaware] console app on the [VM][vm] monitors the [queue][queue].
     1. When a message is received, the file information is retrieved from [blob storage][blob] and copied localy to the [VM][vm].
 	2. The origional console app is called via shell exec; passing in a file name corsponding to the data sent in the [multipart form post][multipart] as well as a location to place all data that should be sent back.
 	3. The [web aware][webaware] console app logs the aproate things and writes the output file back to [blob storage][blob].
-4. If applicable, the [WebHook][webhook] informs the client via the optional callback URL (HTTP GET) that processing is done.
+4. If applicable, the [Webhook][webhook] informs the client via the optional callback URL (HTTP GET) that processing is done.
 
 
 

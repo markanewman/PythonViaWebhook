@@ -1,0 +1,228 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "baseName": { "type": "string" },
+    "addressSpace": { "type": "string" },
+    "vmUser": { "type": "string" },
+    "vmPassword": { "type": "string" },
+    "vmCount": { "type": "int" }
+  },
+  "variables": {
+    "planName": "[parameters('baseName')]",
+    "storageName": "[parameters('baseName')]",
+    "storageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
+    "vnetName": "VNet",
+    "gatewayName": "Gateway",
+    "ipName": "Gateway-Ip",
+    "addressSpace": "[concat(parameters('addressSpace'),'.0/25')]",
+    "mainSubnet": "[concat(parameters('addressSpace'),'.0/26')]",
+    "gatewaySubnet": "[concat(parameters('addressSpace'),'.120/29')]",
+    "gatewayAddressSpace": "[concat(parameters('addressSpace'),'.248/29')]",
+    "funcName": "[parameters('baseName')]",
+    "appInsightsName": "[parameters('baseName')]"
+  },
+  "outputs": {
+    "resourceGroupName": {
+      "type": "string",
+      "value": "[resourceGroup().name]"
+    },
+    "planName": {
+      "type": "string",
+      "value": "[variables('planName')]"
+    },
+    "storageName": {
+      "type": "string",
+      "value": "[variables('storageName')]"
+    },
+    "storageId": {
+      "type": "string",
+      "value": "[variables('storageId')]"
+    },
+    "storageKey": {
+      "type": "string",
+      "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageName'),';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageName')), '2016-01-01').keys[0].value,';')]"
+    },
+    "vnetName": {
+      "type": "string",
+      "value": "[variables('vnetName')]"
+    },
+    "gatewayName": {
+      "type": "string",
+      "value": "[variables('gatewayName')]"
+    },
+    "ipName": {
+      "type": "string",
+      "value": "[variables('ipName')]"
+    },
+    "addressSpace": {
+      "type": "string",
+      "value": "[variables('addressSpace')]"
+    },
+    "mainSubnet": {
+      "type": "string",
+      "value": "[variables('mainSubnet')]"
+    },
+    "gatewaySubnet": {
+      "type": "string",
+      "value": "[variables('gatewaySubnet')]"
+    },
+    "gatewayAddressSpace": {
+      "type": "string",
+      "value": "[variables('gatewaySubnet')]"
+    },
+    "funcName": {
+      "type": "string",
+      "value": "[variables('funcName')]"
+    },
+    "appInsightsName": {
+      "type": "string",
+      "value": "[variables('appInsightsName')]"
+    },
+    "appInsightsKey": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2015-05-01').InstrumentationKey]"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "sku": { "name": "Y1" },
+      "kind": "functionapp",
+      "name": "[variables('planName')]",
+      "apiVersion": "2016-09-01",
+      "location": "[resourceGroup().location]",
+      "properties": { "name": "[variables('planName')]" }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "sku": { "name": "Standard_LRS" },
+      "kind": "Storage",
+      "name": "[variables('storageName')]",
+      "apiVersion": "2017-06-01",
+      "location": "[resourceGroup().location]",
+      "properties": { "supportsHttpsTrafficOnly": true }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "sku": { "name": "Basic" },
+      "name": "[variables('ipName')]",
+      "apiVersion": "2018-01-01",
+      "location": "[resourceGroup().location]"
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[variables('vnetName')]",
+      "apiVersion": "2018-01-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "addressSpace": { "addressPrefixes": [ "[variables('addressSpace')]" ] },
+        "subnets": [
+          {
+            "name": "Default",
+            "properties": { "addressPrefix": "[variables('mainSubnet')]" }
+          },
+          {
+            "name": "GatewaySubnet",
+            "properties": { "addressPrefix": "[variables('gatewaySubnet')]" }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworkGateways",
+      "name": "[variables('gatewayName')]",
+      "apiVersion": "2018-01-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "default",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": { "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('ipName'))]" },
+              "subnet": { "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), 'GatewaySubnet')]" }
+            }
+          }
+        ],
+        "sku": { "name": "Basic" },
+        "gatewayType": "Vpn",
+        "vpnType": "RouteBased",
+        "vpnClientConfiguration": {
+          "vpnClientAddressPool": { "addressPrefixes": [ "[variables('gatewayAddressSpace')]" ] },
+          "vpnClientProtocols": [ "SSTP" ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('ipName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "kind": "functionapp",
+      "name": "[variables('funcName')]",
+      "apiVersion": "2016-08-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('planName'))]",
+        "httpsOnly": true
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
+        "[resourceId('Microsoft.Web/serverfarms', variables('planName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "name": "[concat(variables('funcName'), '/web')]",
+      "apiVersion": "2016-08-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "defaultDocuments": [],
+        "phpVersion": ""
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
+        "[resourceId('Microsoft.Web/serverfarms', variables('planName'))]",
+        "[resourceId('Microsoft.Web/sites', variables('funcName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "name": "[concat(variables('funcName'), '/appsettings')]",
+      "apiVersion": "2016-08-01",
+      "properties": {
+        "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2015-05-01').InstrumentationKey]",
+        "AzureWebJobsDashboard": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageName'),';AccountKey=', listKeys(variables('storageId'), '2016-01-01').keys[0].value,';')]",
+        "AzureWebJobsStorage": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageName'),';AccountKey=', listKeys(variables('storageId'), '2016-01-01').keys[0].value,';')]",
+        "FUNCTION_APP_EDIT_MODE": "readonly",
+        "FUNCTIONS_EXTENSION_VERSION": "~1"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/Components', variables('appInsightsName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
+        "[resourceId('Microsoft.Web/serverfarms', variables('planName'))]",
+        "[resourceId('Microsoft.Web/sites', variables('funcName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/Components",
+      "kind": "other",
+      "name": "[variables('appInsightsName')]",
+      "apiVersion": "2015-05-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "ApplicationId": "[variables('appInsightsName')]",
+        "Application_Type": "other",
+        "Ver": "v2"
+      },
+      "tags": {
+        "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', variables('funcName'))]": "Resource"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('funcName'))]"
+      ]
+    }
+  ]
+}

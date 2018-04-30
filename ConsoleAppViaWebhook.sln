@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27428.2043
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A84F9EEF-ADDD-4FBB-978B-7CC6434A328C}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{151D2E53-A2C4-4D7D-83FE-D05416EBD58E}") = "Infrastructure", "Infrastructure\Infrastructure.deployproj", "{328318DA-E526-4B25-91E5-BB5414C6A061}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{328318DA-E526-4B25-91E5-BB5414C6A061}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{328318DA-E526-4B25-91E5-BB5414C6A061}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{328318DA-E526-4B25-91E5-BB5414C6A061}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{328318DA-E526-4B25-91E5-BB5414C6A061}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6B46E320-26FF-4317-9E48-2D37441E0E09}
+	EndGlobalSection
+EndGlobal
