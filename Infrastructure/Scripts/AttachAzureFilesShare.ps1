@@ -6,6 +6,5 @@ Param (
 	[String]$driveLetter
 )
 
-$acctKey = ConvertTo-SecureString -String $storageKey -AsPlainText -Force
-$credential = New-Object System.Management.Automation.PSCredential -ArgumentList "Azure\$storageName", $acctKey
-New-PSDrive -Name $driveLetter -PSProvider FileSystem -Root "\\$storageName.file.core.windows.net\$shareName" -Credential $credential -Persist
+$cmd = "net use $($driveLetter): \\$storageName.file.core.windows.net\$shareName /u:AZURE\$storageName $storageKey /PERSISTENT:YES"
+cmd.exe /c $cmd

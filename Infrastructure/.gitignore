@@ -2,3 +2,5 @@
 *.pfx
 *.zip
 *.cer
+*.exe
+*.xml

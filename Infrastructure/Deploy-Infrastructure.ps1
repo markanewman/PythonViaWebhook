@@ -40,6 +40,10 @@ New-AzureStorageShare -Context $storageAccount.Context -Name "vmshare" -ErrorAct
 New-AzureStorageContainer -Context $storageAccount.Context -Name "scripts" -Permission Off -ErrorAction SilentlyContinue | Out-Null
 Set-AzureStorageBlobContent -Context $storageAccount.Context -Container "scripts" -File "./scripts/AttachAzureFilesShare.ps1" -Blob 'AttachAzureFilesShare.ps1' -Force | Out-Null
 
+# basic (cheap) gateways freek out when you try to deploy them 2+ times
+$gw = Get-AzureRmVirtualNetworkGateway -ResourceGroupName $resourceGroupName -Name "$baseName-gateway" -ErrorAction SilentlyContinue
+$makeGateway = [boolean]!$gw
+
 # Assemble the paths for the ARM Template files.
 $templatePath =  Join-Path -Path $root './Templates/deployinfrastructure.json'
 Write-Host "templatePath = $templatePath"
@@ -56,6 +60,7 @@ $deploy = New-AzureRMResourceGroupDeployment `
 	-vmUser $user `
 	-vmPassword $(ConvertTo-SecureString -String $password -Force -AsPlainText) `
 	-vmCount $vmCount `
+	-makeGateway $makeGateway `
 	-rootCert $certBase64 `
 	-Verbose `
 	-ErrorAction Stop `

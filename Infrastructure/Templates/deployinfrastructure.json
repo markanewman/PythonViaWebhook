@@ -7,6 +7,7 @@
     "vmUser": { "type": "string" },
     "vmPassword": { "type": "securestring" },
     "vmCount": { "type": "int" },
+    "makeGateway": { "type": "bool" },
     "rootCert": { "type": "string" }
   },
   "variables": {
@@ -142,6 +143,7 @@
     },
     {
       "type": "Microsoft.Network/virtualNetworkGateways",
+      "condition": "[parameters('makeGateway')]",
       "name": "[variables('gatewayName')]",
       "apiVersion": "2018-01-01",
       "location": "[resourceGroup().location]",
