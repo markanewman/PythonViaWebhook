@@ -13,7 +13,7 @@
     "planName": "[parameters('baseName')]",
     "storageName": "[parameters('baseName')]",
     "storageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
-    "vnetName": "VNet",
+    "vnetName": "[concat(parameters('baseName'),'-VNet')]",
     "gatewayName": "Gateway",
     "ipName": "Gateway-Ip",
     "addressSpace": "[concat(parameters('addressSpace'),'.0/25')]",
