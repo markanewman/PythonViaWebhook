@@ -254,6 +254,21 @@
       ]
     },
     {
+      "type": "Microsoft.Compute/disks",
+      "name": "[concat(variables('vmBaseName'),copyIndex(1),'_datadisk')]",
+      "apiVersion": "2017-03-30",
+      "location": "[resourceGroup().location]",
+      "sku": { "name": "Standard_LRS" },
+      "properties": {
+        "creationData": { "createOption": "Empty" },
+        "diskSizeGB": 1023
+      },
+      "copy": {
+        "name": "diskcopy",
+        "count": "[parameters('vmCount')]"
+      }
+    },
+    {
       "type": "Microsoft.Compute/virtualMachines",
       "name": "[concat(variables('vmBaseName'),copyIndex(1))]",
       "apiVersion": "2017-03-30",
@@ -279,10 +294,8 @@
             {
               "lun": 0,
               "name": "[concat(variables('vmBaseName'),copyIndex(1),'_datadisk')]",
-              "createOption": "Empty",
-              "caching": "ReadOnly",
-              "managedDisk": { "storageAccountType": "Premium_LRS" },
-              "diskSizeGB": 1023
+              "createOption": "Attach",
+              "managedDisk": { "id": "[resourceId('Microsoft.Compute/disks', concat(variables('vmBaseName'),copyIndex(1),'_datadisk'))]" }
             }
           ]
         },
@@ -299,7 +312,8 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
-        "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('vmBaseName'),copyIndex(1),'-nic'))]"
+        "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('vmBaseName'),copyIndex(1),'-nic'))]",
+        "[resourceId('Microsoft.Compute/disks', concat(variables('vmBaseName'),copyIndex(1),'_datadisk'))]"
       ]
     }
   ]
