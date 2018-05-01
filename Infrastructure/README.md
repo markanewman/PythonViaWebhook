@@ -27,7 +27,6 @@ $vmCount = 1
 7. Generate the [certs][p2scerts] and [import][p2scertimport] into Azure
 ```{posh}
 # $deploy comes from . ./Azure-Deploy.ps1
-$resourceGroupName = $deploy.Outputs['ResourceGroupName'].Value
 $virtualNetworkGatewayName = $deploy.Outputs['GatewayName'].Value
 $cn = "Azure P2S CAVW"
 
@@ -42,21 +41,24 @@ New-SelfSignedCertificate -Type Custom -DnsName "$cn Child Cert" -KeySpec Signat
 	-CertStoreLocation "Cert:\CurrentUser\My" `
 	-Signer $cert -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.2')
 
-$file = $(New-TemporaryFile).Name
-Export-Certificate -Type CERT -Cert $cert -FilePath $file
-$cert = new-object System.Security.Cryptography.X509Certificates.X509Certificate2($file)
-$certBase64 = [system.convert]::ToBase64String($cert.RawData)
+$file = './root cert public key.cer'
+Export-Certificate -Type CERT -Cert $cert -FilePath $file | Out-Null
+$certpubkey = new-object System.Security.Cryptography.X509Certificates.X509Certificate2($(Resolve-Path $file))
+$certBase64 = [system.convert]::ToBase64String($certpubkey.RawData)
 Remove-Item –path $file
-
-# $gateway = Get-AzureRmVirtualNetworkGateway -ResourceGroupName $resourceGroupName -Name $virtualNetworkGatewayName 
-# Set-AzureRmVirtualNetworkGatewayVpnClientConfig -VirtualNetworkGateway $gateway -VpnClientAddressPool "10.1.0.248/29"
 
 Add-AzureRmVpnClientRootCertificate `
 	-VpnClientRootCertificateName "Default" `
-	-VirtualNetworkGateway $deploy.Outputs['GatewayName'].Value `
-	-ResourceGroupName $deploy.Outputs['ResourceGroupName'].Value `
+	-VirtualNetworkGateway $virtualNetworkGatewayName `
+	-ResourceGroupName $resourceGroupName `
 	-PublicCertData $certBase64
 ```
+8. Get the VPN client
+```
+$profile=New-AzureRmVpnClientConfiguration -ResourceGroupName $resourceGroupName -Name $virtualNetworkGatewayName -AuthenticationMethod "EapTls"
+Invoke-WebRequest -Uri  $profile.VPNProfileSASUrl -OutFile './VPNClient.zip'
+```
+9. Unzip and install the software
 
 ---------
 [p2scertimport]: https://docs.microsoft.com/en-us/azure/vpn-gateway/vpn-gateway-howto-point-to-site-rm-ps
