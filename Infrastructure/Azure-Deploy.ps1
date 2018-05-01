@@ -25,7 +25,15 @@ Write-Host "now = $now"
 Write-Host "deployName = $deployName"
 
 Write-Host "Deploying $resourceGroupName"
-$deploy = New-AzureRmResourceGroup -Name $resourceGroupName -Location $location -ErrorAction Stop -Force 
+$deploy = New-AzureRmResourceGroup -Name $resourceGroupName -Location $location -ErrorAction Stop -Force
+
+Write-Host "Pulling Public Keys"
+$publicKey = 'RootCert.public.cer'
+$storageAccount = Get-AzureRmStorageAccount -ResourceGroupName $resourceGroupName -Name $baseName
+Get-AzureStorageBlobContent -Context $storageAccount.Context -Container 'certs' -Blob $publicKey -Destination "./$publicKey" -Force | Out-Null
+$certpubkey = new-object System.Security.Cryptography.X509Certificates.X509Certificate2($(Resolve-Path "./$publicKey"))
+$certBase64 = [system.convert]::ToBase64String($certpubkey.RawData)
+Remove-Item –path "./$publicKey"
 
 # Assemble the paths for the ARM Template files.
 $templatePath =  Join-Path -Path $root './Templates/azuredeploy.json'
@@ -43,6 +51,7 @@ $deploy = New-AzureRMResourceGroupDeployment `
 	-vmUser $user `
 	-vmPassword $password `
 	-vmCount $vmCount `
+	-rootCert $certBase64 `
 	-Verbose `
 	-ErrorAction Stop `
 	-Force

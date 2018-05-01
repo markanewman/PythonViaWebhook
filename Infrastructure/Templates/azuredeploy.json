@@ -6,7 +6,8 @@
     "addressSpace": { "type": "string" },
     "vmUser": { "type": "string" },
     "vmPassword": { "type": "string" },
-    "vmCount": { "type": "int" }
+    "vmCount": { "type": "int" },
+    "rootCert": { "type": "string" }
   },
   "variables": {
     "planName": "[parameters('baseName')]",
@@ -155,7 +156,13 @@
         "vpnType": "RouteBased",
         "vpnClientConfiguration": {
           "vpnClientAddressPool": { "addressPrefixes": [ "[variables('gatewayAddressSpace')]" ] },
-          "vpnClientProtocols": [ "SSTP" ]
+          "vpnClientProtocols": [ "SSTP" ],
+          "vpnClientRootCertificates": [
+            {
+              "name": "Default",
+              "properties": { "publicCertData": "[parameters('rootCert')]" }
+            }
+          ]
         }
       },
       "dependsOn": [

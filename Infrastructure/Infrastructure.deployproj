@@ -26,9 +26,10 @@
     <None Include="Deployment.targets">
       <Visible>False</Visible>
     </None>
+    <Content Include="Azure-CertDeploy.ps1" />
     <Content Include="Azure-Deploy.ps1" />
     <None Include="README.md" />
-    <None Include="Templates\azuredeploy.json" />
+    <Content Include="Templates\azuredeploy.json" />
   </ItemGroup>
   <Target Name="GetReferenceAssemblyPaths" />
 </Project>
