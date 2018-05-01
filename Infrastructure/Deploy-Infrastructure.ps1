@@ -35,8 +35,13 @@ $certpubkey = new-object System.Security.Cryptography.X509Certificates.X509Certi
 $certBase64 = [system.convert]::ToBase64String($certpubkey.RawData)
 Remove-Item –path "./$publicKey"
 
+Write-Host "Preparing Azure Files Share"
+New-AzureStorageShare -Context $storageAccount.Context -Name "vmshare" -ErrorAction SilentlyContinue | Out-Null
+New-AzureStorageContainer -Context $storageAccount.Context -Name "scripts" -Permission Off -ErrorAction SilentlyContinue | Out-Null
+Set-AzureStorageBlobContent -Context $storageAccount.Context -Container "scripts" -File "./scripts/AttachAzureFilesShare.ps1" -Blob 'AttachAzureFilesShare.ps1' -Force | Out-Null
+
 # Assemble the paths for the ARM Template files.
-$templatePath =  Join-Path -Path $root './Templates/azuredeploy.json'
+$templatePath =  Join-Path -Path $root './Templates/deployinfrastructure.json'
 Write-Host "templatePath = $templatePath"
 	
 # Deploy the template

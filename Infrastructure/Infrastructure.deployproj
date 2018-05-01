@@ -26,10 +26,12 @@
     <None Include="Deployment.targets">
       <Visible>False</Visible>
     </None>
-    <Content Include="Azure-CertDeploy.ps1" />
-    <Content Include="Azure-Deploy.ps1" />
+    <Content Include="Deploy-VpnClient.ps1" />
+    <Content Include="Deploy-RootCert.ps1" />
+    <Content Include="Deploy-Infrastructure.ps1" />
     <None Include="README.md" />
-    <Content Include="Templates\azuredeploy.json" />
+    <Content Include="Templates\deployinfrastructure.json" />
+    <Content Include="Scripts\AttachAzureFilesShare.ps1" />
   </ItemGroup>
   <Target Name="GetReferenceAssemblyPaths" />
 </Project>

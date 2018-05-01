@@ -22,7 +22,8 @@
     "gatewayAddressSpace": "[concat(parameters('addressSpace'),'.248/29')]",
     "funcName": "[parameters('baseName')]",
     "appInsightsName": "[parameters('baseName')]",
-    "vmBaseName": "[parameters('baseName')]"
+    "vmBaseName": "[parameters('baseName')]",
+    "psScriptPath": "[concat('https://',variables('storageName'),'.blob.core.windows.net/scripts/AttachAzureFilesShare.ps1')]"
   },
   "outputs": {
     "resourceGroupName": {
@@ -38,7 +39,7 @@
       "value": "[variables('storageName')]"
     },
     "storageId": {
-      "type": "string",
+      "type": "securestring",
       "value": "[variables('storageId')]"
     },
     "storageKey": {
@@ -88,6 +89,10 @@
     "vmBaseName": {
       "type": "string",
       "value": "[variables('vmBaseName')]"
+    },
+    "psScriptPath": {
+      "type": "string",
+      "value": "[variables('psScriptPath')]"
     }
   },
   "resources": [
@@ -321,6 +326,35 @@
         "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
         "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('vmBaseName'),copyIndex(1),'-nic'))]",
         "[resourceId('Microsoft.Compute/disks', concat(variables('vmBaseName'),copyIndex(1),'_datadisk'))]"
+      ]
+    },
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(variables('vmBaseName'),copyIndex(1), '/psscript')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.9",
+        "autoUpgradeMinorVersion": true,
+        "settings": { "fileUris": [ "[variables('psScriptPath')]" ] },
+        "protectedSettings": {
+          "commandToExecute": "[concat('powershell -ExecutionPolicy Unrestricted -File AttachAzureFilesShare.ps1 -storageName ',variables('storageName'),' -storageKey ',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageName')), '2016-01-01').keys[0].value,' -shareName vmshare -driveLetter Z')]",
+          "storageAccountName": "[variables('storageName')]",
+          "storageAccountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageName')), '2016-01-01').keys[0].value]"
+        }
+      },
+      "copy": {
+        "name": "vmscript",
+        "count": "[parameters('vmCount')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('vmBaseName'),copyIndex(1),'-nic'))]",
+        "[resourceId('Microsoft.Compute/disks', concat(variables('vmBaseName'),copyIndex(1),'_datadisk'))]",
+        "[resourceId('Microsoft.Compute/virtualMachines', concat(variables('vmBaseName'),copyIndex(1)))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]"
       ]
     }
   ]
