@@ -20,6 +20,17 @@ $user = $baseName
 $password = $pass = $(new-guid).Guid;$pass
 $vmCount = 1
 ```
+
+TODO
+	* Generate certs if necessary script
+		* Stash root cert in blob storage
+		* Pass public key to ARM template to avoid always needing to re-call `Add-AzureRmVpnClientRootCertificate`
+		* Make script to download script to generate new client cert
+	* Add azure file storage
+		* Add script to automaticaly attach azure files to VMs
+	* Add script to automaticaly attach "disk 2" on initial create. Re-attaching works as expected
+
+
 6. Deploy the hosting environment
 ```{posh}
 . ./Azure-Deploy.ps1
