@@ -5,7 +5,7 @@
     "baseName": { "type": "string" },
     "addressSpace": { "type": "string" },
     "vmUser": { "type": "string" },
-    "vmPassword": { "type": "string" },
+    "vmPassword": { "type": "securestring" },
     "vmCount": { "type": "int" },
     "rootCert": { "type": "string" }
   },
@@ -13,9 +13,9 @@
     "planName": "[parameters('baseName')]",
     "storageName": "[parameters('baseName')]",
     "storageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
-    "vnetName": "[concat(parameters('baseName'),'-VNet')]",
-    "gatewayName": "Gateway",
-    "ipName": "Gateway-Ip",
+    "vnetName": "[concat(parameters('baseName'),'-vnet')]",
+    "gatewayName": "[concat(parameters('baseName'),'-gateway')]",
+    "ipName": "[concat(parameters('baseName'),'-gateway-ip')]",
     "addressSpace": "[concat(parameters('addressSpace'),'.0/25')]",
     "mainSubnet": "[concat(parameters('addressSpace'),'.0/26')]",
     "gatewaySubnet": "[concat(parameters('addressSpace'),'.120/29')]",
@@ -42,8 +42,8 @@
       "value": "[variables('storageId')]"
     },
     "storageKey": {
-      "type": "string",
-      "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageName'),';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageName')), '2016-01-01').keys[0].value,';')]"
+      "type": "securestring",
+      "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageName')), '2016-01-01').keys[0].value]"
     },
     "vnetName": {
       "type": "string",
@@ -82,7 +82,7 @@
       "value": "[variables('appInsightsName')]"
     },
     "appInsightsKey": {
-      "type": "string",
+      "type": "securestring",
       "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2015-05-01').InstrumentationKey]"
     },
     "vmBaseName": {

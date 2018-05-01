@@ -49,7 +49,7 @@ $deploy = New-AzureRMResourceGroupDeployment `
 	-baseName $baseName `
 	-addressSpace $addressSpace.Substring(0, $addressSpace.LastIndexOf('.')) `
 	-vmUser $user `
-	-vmPassword $password `
+	-vmPassword $(ConvertTo-SecureString -String $password -Force -AsPlainText) `
 	-vmCount $vmCount `
 	-rootCert $certBase64 `
 	-Verbose `
@@ -60,7 +60,6 @@ Write-Verbose "Verifying $deployName"
 $verify = Get-AzureRmResourceGroupDeployment `
 	-Name $deployName `
 	-ResourceGroupName $resourceGroupName
-
 
 if(($deploy.ProvisioningState -ne 'Succeeded') -or ($verify.ProvisioningState -ne 'Succeeded'))
 {
