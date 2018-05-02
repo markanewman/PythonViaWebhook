@@ -24,6 +24,7 @@ $vmCount = 1
 ```{posh}
 $certPassword = $(new-guid).Guid;$certPassword
 . ./Deploy-RootCert.ps1
+# TODO: dont upload the root cert private key, upload the whole client cert
 ```
 7. Deploy the hosting environment
 ```{posh}
