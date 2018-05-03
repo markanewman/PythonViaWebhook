@@ -27,20 +27,20 @@ Write-Host "deployName = $deployName"
 Write-Host "Deploying $resourceGroupName"
 $deploy = New-AzureRmResourceGroup -Name $resourceGroupName -Location $location -ErrorAction Stop -Force
 
-Write-Host "Pulling Public Keys"
-$publicKey = 'RootCert.public.cer'
+Write-Host "Pulling Root Cert"
+$rootCertName = 'RootCert.cer'
 $storageAccount = Get-AzureRmStorageAccount -ResourceGroupName $resourceGroupName -Name $baseName
-Get-AzureStorageBlobContent -Context $storageAccount.Context -Container 'certs' -Blob $publicKey -Destination "./$publicKey" -Force | Out-Null
-$certpubkey = new-object System.Security.Cryptography.X509Certificates.X509Certificate2($(Resolve-Path "./$publicKey"))
-$certBase64 = [system.convert]::ToBase64String($certpubkey.RawData)
-Remove-Item –path "./$publicKey"
+Get-AzureStorageBlobContent -Context $storageAccount.Context -Container 'certs' -Blob $rootCertName -Destination "./$rootCertName" -Force | Out-Null
+$rootCert = new-object System.Security.Cryptography.X509Certificates.X509Certificate2($(Resolve-Path "./$rootCertName"))
+$rootCertBase64 = [system.convert]::ToBase64String($rootCert.RawData)
+Remove-Item –path "./$rootCertName"
 
 Write-Host "Preparing Azure Files Share"
 New-AzureStorageShare -Context $storageAccount.Context -Name "vmshare" -ErrorAction SilentlyContinue | Out-Null
 New-AzureStorageContainer -Context $storageAccount.Context -Name "scripts" -Permission Off -ErrorAction SilentlyContinue | Out-Null
 Set-AzureStorageBlobContent -Context $storageAccount.Context -Container "scripts" -File "./scripts/AttachAzureFilesShare.ps1" -Blob 'AttachAzureFilesShare.ps1' -Force | Out-Null
 
-# basic (cheap) gateways freek out when you try to deploy them 2+ times
+# the basic (cheap) gateway freeks out when you try to deploy it 2+ times
 $gw = Get-AzureRmVirtualNetworkGateway -ResourceGroupName $resourceGroupName -Name "$baseName-gateway" -ErrorAction SilentlyContinue
 $makeGateway = [boolean]!$gw
 
@@ -61,7 +61,7 @@ $deploy = New-AzureRMResourceGroupDeployment `
 	-vmPassword $(ConvertTo-SecureString -String $password -Force -AsPlainText) `
 	-vmCount $vmCount `
 	-makeGateway $makeGateway `
-	-rootCert $certBase64 `
+	-rootCert $rootCertBase64 `
 	-Verbose `
 	-ErrorAction Stop `
 	-Force

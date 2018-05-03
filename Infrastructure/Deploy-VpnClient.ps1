@@ -12,32 +12,24 @@ Write-Host "--- Expected Parameters End --"
 Write-Host ""
 
 $containerName = 'certs'
-$privateKey = 'RootCert.pfx'
+$clientCertName = 'Client.pfx'
 $virtualNetworkGatewayName = "$baseName-gateway"
 Write-Host "containerName = $containerName" 
-Write-Host "privateKey = $privateKey" 
+Write-Host "clientCertName = $clientCertName" 
 Write-Host "virtualNetworkGatewayName = $virtualNetworkGatewayName" 
 
 Write-Host "Getting the Storage Account"
 $storageAccount = Get-AzureRmStorageAccount -ResourceGroupName $resourceGroupName -Name $baseName
 
-Write-Host "Getting the Root Cert's private key"
-Get-AzureStorageBlobContent -Context $storageAccount.Context -Container $containerName -Blob $privateKey -Destination "./$privateKey" -Force | Out-Null
+Write-Host "Getting the Client Cert"
+Get-AzureStorageBlobContent -Context $storageAccount.Context -Container $containerName -Blob $clientCertName -Destination "./$clientCertName" -Force | Out-Null
 
-Write-Host "Loading Root Cert"
-$cert = Import-PfxCertificate `
+Write-Host "Loading Client Cert"
+Import-PfxCertificate `
 	-Password $(ConvertTo-SecureString -String $certPassword -Force -AsPlainText) `
 	-CertStoreLocation "Cert:\CurrentUser\My" `
-	-FilePath "./$privateKey"
-Remove-Item –path "./$privateKey"
-
-Write-Host "Generating Client Cert"
-New-SelfSignedCertificate -Type Custom -DnsName "Azure P2S $baseName Child Cert" -KeySpec Signature `
-	-Subject "CN=Azure P2S $baseName Child Cert" -KeyExportPolicy Exportable `
-	-HashAlgorithm sha256 -KeyLength 2048 `
-	-CertStoreLocation "Cert:\CurrentUser\My" `
-	-Signer $cert -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.2')
-Remove-Item -Path "Cert:\CurrentUser\My\$($cert.Thumbprint)"
+	-FilePath "./$clientCertName" | Out-Null
+Remove-Item –path "./$clientCertName"
 
 Write-Host "Downloading Vpn Client"
 $profile = New-AzureRmVpnClientConfiguration -ResourceGroupName $resourceGroupName -Name $virtualNetworkGatewayName -AuthenticationMethod "EapTls"

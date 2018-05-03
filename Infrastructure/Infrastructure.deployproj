@@ -27,7 +27,7 @@
       <Visible>False</Visible>
     </None>
     <Content Include="Deploy-VpnClient.ps1" />
-    <Content Include="Deploy-RootCert.ps1" />
+    <Content Include="Deploy-Certs.ps1" />
     <Content Include="Deploy-Infrastructure.ps1" />
     <None Include="README.md" />
     <Content Include="Templates\deployinfrastructure.json" />

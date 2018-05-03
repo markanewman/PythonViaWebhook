@@ -28,27 +28,34 @@ if(!$storageAccount)
 $ctx = $storageAccount.Context
 
 Write-Host "Validating Root Cert"
-$publicKey = 'RootCert.public.cer'
-$privateKey = 'RootCert.pfx'
+$rootCertName = 'RootCert.cer'
+$clientCertName = 'Client.pfx'
 New-AzureStorageContainer -Context $ctx -Name $containerName -Permission Off -ErrorAction SilentlyContinue | Out-Null
-$blob = Get-AzureStorageBlob -Context $ctx -Container $containerName -Blob $publicKey -ErrorAction SilentlyContinue
+$blob = Get-AzureStorageBlob -Context $ctx -Container $containerName -Blob $clientCertName -ErrorAction SilentlyContinue
 if(!$blob)
 {
-	Write-Host "Public Key not found. Making new Keys"
-	$cert = New-SelfSignedCertificate -Type Custom -KeySpec Signature `
+	Write-Host "Client Cert not found. Making new Keys"
+	$rootCert = New-SelfSignedCertificate -Type Custom -KeySpec Signature `
 		-Subject "CN=Azure P2S $baseName Root Cert" -KeyExportPolicy Exportable `
 		-HashAlgorithm sha256 -KeyLength 2048 `
 		-CertStoreLocation "Cert:\CurrentUser\My" `
 		-KeyUsageProperty Sign -KeyUsage CertSign
+	$clientCert = New-SelfSignedCertificate -Type Custom -KeySpec Signature `
+		-Subject "CN=Azure P2S $baseName Child Cert" -KeyExportPolicy Exportable `
+		-HashAlgorithm sha256 -KeyLength 2048 `
+		-CertStoreLocation "Cert:\CurrentUser\My" `
+		-DnsName "Azure P2S $baseName Child Cert" `
+		-Signer $rootCert -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.2')
 
 	$mypwd = ConvertTo-SecureString -String $certPassword -Force -AsPlainText
-	Export-Certificate -Cert $cert -FilePath "./$publicKey" -Type CERT | Out-Null
-	Export-PfxCertificate -Cert $cert -FilePath "./$privateKey" -Password $mypwd | Out-Null
-	Set-AzureStorageBlobContent -Context $ctx -Container $containerName -File "./$privateKey" -Blob $privateKey
-	Set-AzureStorageBlobContent -Context $ctx -Container $containerName -File "./$publicKey" -Blob $publicKey 	
-	Remove-Item –path "./$publicKey"
-	Remove-Item –path "./$privateKey"
-	Remove-Item -Path "Cert:\CurrentUser\My\$($cert.Thumbprint)"
+	Export-Certificate -Cert $rootCert -FilePath "./$rootCertName" -Type CERT | Out-Null
+	Export-PfxCertificate -Cert $clientCert -FilePath "./$clientCertName" -Password $mypwd | Out-Null
+	Set-AzureStorageBlobContent -Context $ctx -Container $containerName -File "./$rootCertName" -Blob $rootCertName
+	Set-AzureStorageBlobContent -Context $ctx -Container $containerName -File "./$clientCertName" -Blob $clientCertName 	
+	Remove-Item –path "./$rootCertName"
+	Remove-Item –path "./$clientCertName"
+	Remove-Item -Path "Cert:\CurrentUser\My\$($rootCert.Thumbprint)"
+	Remove-Item -Path "Cert:\CurrentUser\My\$($clientCert.Thumbprint)"
 }
 
 Write-Host "Finished the PowerShell script: $($MyInvocation.MyCommand.Path)"
