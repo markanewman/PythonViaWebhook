@@ -29,9 +29,11 @@
     <Content Include="Deploy-VpnClient.ps1" />
     <Content Include="Deploy-Certs.ps1" />
     <Content Include="Deploy-Infrastructure.ps1" />
+    <None Include="DockerFile" />
     <None Include="README.md" />
     <Content Include="Templates\deployinfrastructure.json" />
     <Content Include="Scripts\AttachAzureFilesShare.ps1" />
+    <None Include="requirements.txt" />
   </ItemGroup>
   <Target Name="GetReferenceAssemblyPaths" />
 </Project>
