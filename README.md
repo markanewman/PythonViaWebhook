@@ -7,7 +7,7 @@ I also don't want to rewrite a lot.
 # Parts
 
 There are 3 parts to this project (listed below) that incrementally build on top of each other.
-They may be [run incrementally](./debuging.md) for the purpose of understanding, or just [deployed](./deploy.md) to [Azure](https://azure.microsoft.com)
+They may be [run incrementally](./manualdeploy.md) for the purpose of understanding and experimentation, or just [deployed](./scripteddeploy.md) to [Azure](https://azure.microsoft.com)
 
 1. [Worker](./Worker)
 2. [Docker](./Docker)

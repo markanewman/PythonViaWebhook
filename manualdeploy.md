@@ -1,3 +1,53 @@
+# Enviormental Setup
+
+Before you can do anything, there are some amount of prerequsits involved.
+They are listed below.
+
+* Install [Docker](https://docs.docker.com/get-started/)
+* Install [Python](https://docs.python.org/3/)
+    * Install the non-core packages
+```{cmd}
+pip install applicationinsights
+pip install azure-storage-blob
+pip install azure-storage-queue
+```
+* Make your _primary_ [Azure][azure] resources
+    * [Storage account][storage]
+	* [Application Insights][appinsights]
+* Make a `todo` and a `done` [blob][blob] container in your [storage account][storage]
+* Make a `todo` and a `done` [queue][queue] in your [storage account][storage]
+
+	
+# Worker
+
+1. Open a command console
+2. Change to the `./worker` directory
+3. Make sure there is a `secrets.ini`. The _xxx_ are replaced by the values found in your _primary_ [Azure][azure] resources
+```{txt}
+[AZURE]
+iKey = xxx
+AccountName = xxx
+AccountKey = xxx
+```
+4. Place a file in the `todo` [blob][blob] container
+5. Place a message containing the file name in the `todo` [queue][queue]
+6. Run `python worker.py`
+
+## Expected Result
+
+1. There should be a new file in the `done` [blob][blob] container.
+   The content should be "0--" then the content of the origional file
+2. There should be a new message in the `done` [queue][queue] with the file name as the content
+3. The worker should terminate automaticaly once the `todo` [queue][queue] is empty
+4. The origional file should remain in the [blob][blob] container
+5. After a 5-10 min delay, there should be some notices in the [Application Insights][appinsights] detailing the process
+
+
+
+
+
+
+
 --- list/remove an image --
 
 docker images -a
@@ -40,13 +90,11 @@ As part of the initial setup, the service owner needs to provide the service use
 	3. The [web aware][webaware] console app logs the aproate things and writes the output file back to [blob storage][blob].
 4. If applicable, the [Webhook][webhook] informs the client via the optional callback URL (HTTP GET) that processing is done.
 
-
+[appinsights]: https://docs.microsoft.com/en-us/azure/application-insights/app-insights-overview
 [azure]: https://azure.microsoft.com
 [blob]: https://azure.microsoft.com/en-us/services/storage/blobs
-[multipart]: https://stackoverflow.com/questions/16958448/what-is-http-multipart-request
-[python]: 
 [queue]: https://azure.microsoft.com/en-us/services/storage/queues/
-[storage]: https://docs.microsoft.com/en-us/azure/storage/common/storage-introduction
+[storage]: https://docs.microsoft.com/en-us/azure/storage/
 [vm]: https://docs.microsoft.com/en-us/azure/virtual-machines/windows
 [webaware]: https://en.oxforddictionaries.com/definition/web_aware
 [webhook]: https://en.wikipedia.org/wiki/Webhook
