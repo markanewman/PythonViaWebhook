@@ -49,43 +49,35 @@ AccountKey = xxx
 1. Make sure the steps in **Worker** have been followed and can run sucessfuly
 2. Open a command console
 3. Change to the repo's root directory
-    * [Docker][docker] docker has a 'context'.
+    * When building a [Docker][docker] image, a 'context' is needed.
 	  All files that you want to use need to be under it.
-	  In this case the `./Docker` and `./Worker` are siblings so make the 'context' their parent
-4. Make the Docker Image
+	  In this case, the `./Docker` and `./Worker` are siblings so make the 'context' their parent
+	  (works as of [here](https://github.com/docker/cli/pull/886))
+4. Make the [Docker][docker] Image / Container
+    * Run `docker` to
+	  `build` an image
+	  while explicitly specifying the name of the image (`-t python-via-webhook`)
+	  and the name of the docker file (`-f ./Docker/Dockerfile`)
+	  with the context `.`
+	* Run `docker` to
+	  `create` a
+	  named container (`--name my-python-via-webhook`)
+	  from a know image (`python-via-webhook`)
+	* Addtional notes can be found [here](./DockerNotes.md)
 ```{shell}
-docker build -t python-via-webhook -f ./Docker/Dockerfile  .
+docker build -t python-via-webhook -f ./Docker/Dockerfile .
+docker create --name my-python-via-webhook python-via-webhook
+```
+5. Place a file in the `todo` [blob][blob] container
+6. Place a message containing the file name in the `todo` [queue][queue]
+7. Run the [Docker][docker] Container
+```{shell}
+docker start my-python-via-webhook
 ```
 
-## Docker cheet sheet
+## Expected Result
 
-List/remove an image
-
-```{shell}
-docker images -a
-docker rmi {{Image ID}}
-```
-
-Make a new image
-
-```{shell}
-cd "C:\Users\{{user}}\Desktop\Docker"
-docker build -t my-python-app ./app
-```
-
-list/stop/remove a container
-
-```{shell}
-docker ps -a
-docker kill {{Container ID}}
-docker rm {{Container ID}}
-```
-
-Shell into a container that has [Python][python] installed
-
-```{shell}
-docker run -it python:3
-```
+Same as for **Worker**
 
 
 -----------
