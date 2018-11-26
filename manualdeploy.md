@@ -3,8 +3,9 @@
 Before you can do anything, there are some amount of prerequsits involved.
 They are listed below.
 
-* Install [Docker](https://docs.docker.com/get-started/)
-* Install [Python](https://docs.python.org/3/)
+* Install [Docker][docker] desktop
+    * You will need to setup a free account on [Docker][docker] to download the software
+* Install [Python][python]
     * Install the non-core packages
 ```{cmd}
 pip install applicationinsights
@@ -12,17 +13,18 @@ pip install azure-storage-blob
 pip install azure-storage-queue
 ```
 * Make your _primary_ [Azure][azure] resources
+    * You will need to setup a trial account on [Azure][azure] to be able to do this. 
     * [Storage account][storage]
 	* [Application Insights][appinsights]
 * Make a `todo` and a `done` [blob][blob] container in your [storage account][storage]
 * Make a `todo` and a `done` [queue][queue] in your [storage account][storage]
-
 	
 # Worker
 
 1. Open a command console
-2. Change to the `./worker` directory
-3. Make sure there is a `secrets.ini`. The _xxx_ are replaced by the values found in your _primary_ [Azure][azure] resources
+2. Change to the `./Worker` directory
+3. Make sure there is a `secrets.ini`.
+   The _xxx_ are replaced by the values found in your _primary_ [Azure][azure] resources
 ```{txt}
 [AZURE]
 iKey = xxx
@@ -42,36 +44,48 @@ AccountKey = xxx
 4. The origional file should remain in the [blob][blob] container
 5. After a 5-10 min delay, there should be some notices in the [Application Insights][appinsights] detailing the process
 
+# Docker
 
+1. Make sure the steps in **Worker** have been followed and can run sucessfuly
+2. Open a command console
+3. Change to the repo's root directory
+    * [Docker][docker] docker has a 'context'.
+	  All files that you want to use need to be under it.
+	  In this case the `./Docker` and `./Worker` are siblings so make the 'context' their parent
+4. Make the Docker Image
+```{shell}
+docker build -t python-via-webhook -f ./Docker/Dockerfile  .
+```
 
+## Docker cheet sheet
 
+List/remove an image
 
-
-
---- list/remove an image --
-
+```{shell}
 docker images -a
 docker rmi {{Image ID}}
+```
 
---- make a new image --- 
+Make a new image
 
-cd "C:\Users\mnewman\Desktop\Docker"
-docker build -t my-python-console ./console
+```{shell}
+cd "C:\Users\{{user}}\Desktop\Docker"
 docker build -t my-python-app ./app
+```
 
---- list/stop/remove a container---
+list/stop/remove a container
 
+```{shell}
 docker ps -a
 docker kill {{Container ID}}
 docker rm {{Container ID}}
+```
 
---- shell into a container ---
+Shell into a container that has [Python][python] installed
 
+```{shell}
 docker run -it python:3
-docker run -it my-python-console
-docker run -it my-python-app
-
-docker start {{Container ID}}
+```
 
 
 -----------
@@ -92,6 +106,8 @@ As part of the initial setup, the service owner needs to provide the service use
 
 [appinsights]: https://docs.microsoft.com/en-us/azure/application-insights/app-insights-overview
 [azure]: https://azure.microsoft.com
+[docker]: https://docs.docker.com/get-started/
+[python]: https://docs.python.org/3/
 [blob]: https://azure.microsoft.com/en-us/services/storage/blobs
 [queue]: https://azure.microsoft.com/en-us/services/storage/queues/
 [storage]: https://docs.microsoft.com/en-us/azure/storage/
