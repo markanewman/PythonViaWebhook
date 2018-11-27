@@ -1,7 +1,6 @@
 # Enviormental Setup
 
-Before you can do anything, there are some amount of prerequsits involved.
-They are listed below.
+Before you can do anything, there is some amount of prep work involved.
 
 * Install [Docker][docker] desktop
     * You will need to setup a free account on [Docker][docker] to download the software
@@ -79,6 +78,46 @@ docker start my-python-via-webhook
 
 Same as for **Worker**
 
+# Azure Host
+
+1. Make sure the steps in **Docker** have been followed and can run sucessfuly
+2. Open a Powershell console
+3. Change to the repo's root directory
+4. Login to [Azure][azure], specifying the name if necessary
+```{posh}
+Login-AzureRmAccount
+Set-AzureRmContext -SubscriptionName "{{Subscription name}}"
+```
+5. Create a [resource group][arm]
+    * `$location` needs be one of the regions that can host [Application Insights][appinsights].
+	  Availability can be found [here](https://azure.microsoft.com/en-us/updates/?product=application-insights)
+```{posh}
+$resourceGroupName = "PythonViaWebhook"
+$location = "South Central US"
+New-AzureRmResourceGroup -Name $resourceGroupName -Location $location
+```
+6. Deploy the [Azure resources][arm]
+```{posh}
+$deploy = New-AzureRMResourceGroupDeployment `
+	-Name $("AzureHost-" + $(Get-Date -F 'yyyyMMddHHmmss')) `
+	-ResourceGroupName $resourceGroupName `
+	-Mode 'Incremental' `
+	-TemplateFile './AzureHost/Templates/AzureHost.json' `
+	-Verbose
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 -----------
 https://blogs.technet.microsoft.com/uktechnet/2018/04/04/run-your-python-script-on-demand-with-azure-container-instances-and-azure-logic-apps/
@@ -96,6 +135,7 @@ As part of the initial setup, the service owner needs to provide the service use
 	3. The [web aware][webaware] console app logs the aproate things and writes the output file back to [blob storage][blob].
 4. If applicable, the [Webhook][webhook] informs the client via the optional callback URL (HTTP GET) that processing is done.
 
+[arm]: https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-overview
 [appinsights]: https://docs.microsoft.com/en-us/azure/application-insights/app-insights-overview
 [azure]: https://azure.microsoft.com
 [docker]: https://docs.docker.com/get-started/
