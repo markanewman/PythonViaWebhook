@@ -20,6 +20,8 @@ pip install azure-storage-queue
 	
 # Worker
 
+## Arrange
+
 1. Open a command console
 2. Change to the `./Worker` directory
 3. Make sure there is a `secrets.ini`.
@@ -30,11 +32,14 @@ iKey = xxx
 AccountName = xxx
 AccountKey = xxx
 ```
-4. Place a file in the `todo` [blob][blob] container
-5. Place a message containing the file name in the `todo` [queue][queue]
-6. Run `python worker.py`
 
-## Expected Result
+## Act
+
+1. Place a file in the `todo` [blob][blob] container
+2. Place a message containing the file name in the `todo` [queue][queue]
+3. Run `python worker.py`
+
+## Assert
 
 1. There should be a new file in the `done` [blob][blob] container.
    The content should be "0--" then the content of the origional file
@@ -44,6 +49,8 @@ AccountKey = xxx
 5. After a 5-10 min delay, there should be some notices in the [Application Insights][appinsights] detailing the process
 
 # Docker
+
+## Arrange
 
 1. Make sure the steps in **Worker** have been followed and can run sucessfuly
 2. Open a command console
@@ -67,18 +74,23 @@ AccountKey = xxx
 docker build -t python-via-webhook -f ./Docker/Dockerfile .
 docker create --name my-python-via-webhook python-via-webhook
 ```
-5. Place a file in the `todo` [blob][blob] container
-6. Place a message containing the file name in the `todo` [queue][queue]
-7. Run the [Docker][docker] Container
+
+## Act
+
+1. Place a file in the `todo` [blob][blob] container
+2. Place a message containing the file name in the `todo` [queue][queue]
+3. Run the [Docker][docker] Container
 ```{shell}
 docker start my-python-via-webhook
 ```
 
-## Expected Result
+## Assert
 
 Same as for **Worker**
 
 # Azure Host
+
+## Arrange
 
 1. Make sure the steps in **Docker** have been followed and can run sucessfuly
 2. Open a Powershell console
@@ -105,6 +117,13 @@ $deploy = New-AzureRMResourceGroupDeployment `
 	-TemplateFile './AzureHost/Templates/AzureHost.json' `
 	-Verbose
 ```
+
+## Act
+
+1. Open a command console
+2. Run `python ./AzureHost/driver.py`
+
+## Assert
 
 
 

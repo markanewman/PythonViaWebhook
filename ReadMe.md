@@ -7,7 +7,8 @@ I also don't want to rewrite a lot.
 # Parts
 
 There are 3 parts to this project (listed below) that incrementally build on top of each other.
-They may be [run incrementally](./ManualDeploy.md) for the purpose of understanding and experimentation, or just [deployed](./ScriptedDeploy.md) to [Azure](https://azure.microsoft.com)
+Deploy steps can be found [here](./Deploy.md).
+They are aranged in [AAA](http://wiki.c2.com/?ArrangeActAssert) form for understanding and experimentation.
 
 1. [Worker](./Worker)
 2. [Docker](./Docker)
