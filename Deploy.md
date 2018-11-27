@@ -37,7 +37,10 @@ AccountKey = xxx
 
 1. Place a file in the `todo` [blob][blob] container
 2. Place a message containing the file name in the `todo` [queue][queue]
-3. Run `python worker.py`
+3. Run the worker
+```{shell}
+python worker.py
+```
 
 ## Assert
 
@@ -106,7 +109,7 @@ Set-AzureRmContext -SubscriptionName "{{Subscription name}}"
 ```{posh}
 $resourceGroupName = "PythonViaWebhook"
 $location = "South Central US"
-New-AzureRmResourceGroup -Name $resourceGroupName -Location $location
+New-AzureRmResourceGroup -Name $resourceGroupName -Location $location -Force
 ```
 6. Deploy the [Azure resources][arm]
 ```{posh}
@@ -114,14 +117,17 @@ $deploy = New-AzureRMResourceGroupDeployment `
 	-Name $("AzureHost-" + $(Get-Date -F 'yyyyMMddHHmmss')) `
 	-ResourceGroupName $resourceGroupName `
 	-Mode 'Incremental' `
-	-TemplateFile './AzureHost/Templates/AzureHost.json' `
+	-TemplateFile './AzureHost/azuredeploy.json' `
 	-Verbose
 ```
 
 ## Act
 
 1. Open a command console
-2. Run `python ./AzureHost/driver.py`
+2. Run the sample driver
+```{shell}
+python ./AzureHost/driver.py
+```
 
 ## Assert
 

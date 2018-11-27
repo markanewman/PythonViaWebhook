@@ -41,7 +41,21 @@
       "name": "[variables('storageName')]",
       "apiVersion": "2018-07-01",
       "location": "[resourceGroup().location]",
-      "properties": { "supportsHttpsTrafficOnly": true }
+      "properties": { "supportsHttpsTrafficOnly": true },
+      "resources": [
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2018-07-01",
+          "name": "default/todo",
+          "dependsOn": [ "[variables('storageName')]" ]
+        },
+        {
+          "type": "blobServices/containers",
+          "apiVersion": "2018-07-01",
+          "name": "default/done",
+          "dependsOn": [ "[variables('storageName')]" ]
+        }
+      ]
     },
     {
       "type": "Microsoft.Insights/Components",
