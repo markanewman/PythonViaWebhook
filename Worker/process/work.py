@@ -1,5 +1,8 @@
+import time
+
 def init():
-	return {'v1': 0}
+    time.sleep(60)
+    return {'v1': 0}
 
 def execute(state, file_path_in, file_path_out):
 	with open(file_path_in, 'r', encoding = 'utf-8') as file_in:
