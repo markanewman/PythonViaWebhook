@@ -14,9 +14,10 @@ pip install azure-storage-queue
 * Make your _primary_ [Azure][azure] resources
     * You will need to setup a trial account on [Azure][azure] to be able to do this. 
     * [Storage account][storage]
+	    * Make a `todo` and a `done` [blob][blob] container in your [storage account][storage]
+        * Make a `todo` and a `done` [queue][queue] in your [storage account][storage]
 	* [Application Insights][appinsights]
-* Make a `todo` and a `done` [blob][blob] container in your [storage account][storage]
-* Make a `todo` and a `done` [queue][queue] in your [storage account][storage]
+
 	
 # Worker
 
@@ -120,18 +121,46 @@ $deploy = New-AzureRMResourceGroupDeployment `
 	-TemplateFile './AzureHost/azuredeploy.json' `
 	-Verbose
 ```
+7. Add in the queues
+    * They cannot be automaticaly setup by in the [ARM Template][arm] _yet_
+```{posh}
+$storageName = $deploy.Outputs['storageName'].Value
+$storageKey = $deploy.Outputs['storageKey'].Value
+$ctx = New-AzureStorageContext -StorageAccountName $storageName -StorageAccountKey $storageKey
+ New-AzureStorageQueue –Name 'todo' -Context $ctx | Out-Null
+ New-AzureStorageQueue –Name 'done' -Context $ctx | Out-Null
+```
+8. Build the secrets file for the **Worker**
+```{posh}
+$ikey = $deploy.Outputs['appInsightsKey'].Value
+$content = "[AZURE]
+iKey = $ikey
+AccountName = $storageName
+AccountKey = $storageKey"
+Set-Content -Path ./Worker/secrets.ini -Value $content
+```
 
 ## Act
 
-1. Open a command console
-2. Run the sample driver
+1. Post a sample file to the service
+    * Putting in a value for callback in the header will cause the service to webhook to that url when the process is done.
 ```{shell}
-python ./AzureHost/driver.py
+$acceptRequestName = $deploy.Outputs['acceptRequestName'].Value
+$acceptUrl = Get-AzureRmLogicAppTriggerCallbackUrl -ResourceGroupName $resourceGroupName -Name $acceptRequestName -TriggerName 'manual'
+Set-Content -Path ./sample.txt -Value 'xxxxxxxx'
+$response = Invoke-WebRequest -Uri $($acceptUrl.Value) -Method Post -InFile ./sample.txt -Headers @{ callback = '' }
+Remove-Item ./sample.txt
 ```
 
 ## Assert
 
-
+1. Same as for **Docker**
+2. The Response code should be 202.
+   The body chould contain a key that is a GUID.
+```{shell}
+ $response.StatusCode
+ $response.Content | ConvertFrom-Json
+```
 
 
 
