@@ -186,7 +186,7 @@
               "runAfter": { "2.CreateBlob": [ "Succeeded" ] },
               "type": "ApiConnection",
               "inputs": {
-                "body": "@{concat('{ \"PartitionKey\":\"master\", \"RowKey\":\"', variables('name'),'\", \"Status\":\"NotStarted\", \"CallBackUrl\":', if(equals(triggerOutputs()['headers']?['Callback-Url'], null), 'null', concat('\"', triggerOutputs()['headers']['Callback-Url'], '\"')), ' }')}",
+                "body": "@{concat('{ \"PartitionKey\":\"master\", \"RowKey\":\"', variables('name'),'\", \"Status\":\"Processing\", \"CallBackUrl\":', if(equals(triggerOutputs()['headers']?['Callback-Url'], null), 'null', concat('\"', triggerOutputs()['headers']['Callback-Url'], '\"')), ' }')}",
                 "host": { "connection": { "name": "@parameters('$connections')['azuretables']['connectionId']" } },
                 "method": "post",
                 "path": "/Tables/status/entities"
