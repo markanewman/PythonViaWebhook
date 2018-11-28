@@ -17,7 +17,6 @@ pip install azure-storage-queue
 	    * Make a `todo` and a `done` [blob][blob] container in your [storage account][storage]
         * Make a `todo` and a `done` [queue][queue] in your [storage account][storage]
 	* [Application Insights][appinsights]
-
 	
 # Worker
 
