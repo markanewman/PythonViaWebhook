@@ -5,10 +5,12 @@
     "acceptRequestName": "AcceptRequest",
     "appInsightsName": "[resourceGroup().name]",
     "blobConnectionName": "Connection-AzureBlob",
+    "blobConnectionApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azureblob')]",
     "queueConnectionName": "Connection-AzureQueue",
-    "storageBlobApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azureblob')]",
+    "queueConnectionApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azurequeues')]",
     "storageName": "[uniqueString(resourceGroup().id)]",
-    "storageQueueApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azurequeues')]"
+    "tableConnectionName": "Connection-AzureTable",
+    "tableConnectionApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azuretables')]"
   },
   "outputs": {
     "acceptRequestName": {
@@ -27,13 +29,17 @@
       "type": "string",
       "value": "[variables('blobConnectionName')]"
     },
+    "blobConnectionApiId": {
+      "type": "string",
+      "value": "[variables('blobConnectionApiId')]"
+    },
     "queueConnectionName": {
       "type": "string",
       "value": "[variables('queueConnectionName')]"
     },
-    "storageBlobApiId": {
+    "queueConnectionApiId": {
       "type": "string",
-      "value": "[variables('storageBlobApiId')]"
+      "value": "[variables('queueConnectionApiId')]"
     },
     "storageKey": {
       "type": "string",
@@ -43,9 +49,13 @@
       "type": "string",
       "value": "[variables('storageName')]"
     },
-    "storageQueueApiId": {
+    "tableConnectionName": {
       "type": "string",
-      "value": "[variables('storageQueueApiId')]"
+      "value": "[variables('tableConnectionName')]"
+    },
+    "tableConnectionApiId": {
+      "type": "string",
+      "value": "[variables('tableConnectionApiId')]"
     }
   },
   "resources": [
@@ -87,7 +97,7 @@
       "location": "[resourceGroup().location]",
       "properties": {
         "displayName": "[variables('blobConnectionName')]",
-        "api": { "id": "[variables('storageBlobApiId')]" },
+        "api": { "id": "[variables('blobConnectionApiId')]" },
         "parameterValues": {
           "accountName": "[variables('storageName')]",
           "accessKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageName')), '2018-07-01').keys[0].value]"
@@ -102,7 +112,22 @@
       "location": "[resourceGroup().location]",
       "properties": {
         "displayName": "[variables('queueConnectionName')]",
-        "api": { "id": "[variables('storageQueueApiId')]" },
+        "api": { "id": "[variables('queueConnectionApiId')]" },
+        "parameterValues": {
+          "storageaccount": "[variables('storageName')]",
+          "sharedkey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageName')), '2018-07-01').keys[0].value]"
+        }
+      },
+      "dependsOn": [ "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]" ]
+    },
+    {
+      "type": "Microsoft.Web/connections",
+      "name": "[variables('tableConnectionName')]",
+      "apiVersion": "2016-06-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[variables('tableConnectionName')]",
+        "api": { "id": "[variables('tableConnectionApiId')]" },
         "parameterValues": {
           "storageaccount": "[variables('storageName')]",
           "sharedkey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageName')), '2018-07-01').keys[0].value]"
@@ -129,23 +154,7 @@
             }
           },
           "actions": {
-            "Create_blob": {
-              "runAfter": { "Initialize_variable": [ "Succeeded" ] },
-              "type": "ApiConnection",
-              "inputs": {
-                "body": "@triggerBody()",
-                "host": { "connection": { "name": "@parameters('$connections')['azureblob']['connectionId']" } },
-                "method": "post",
-                "path": "/datasets/default/files",
-                "queries": {
-                  "folderPath": "/todo",
-                  "name": "@variables('name')",
-                  "queryParametersSingleEncoded": true
-                }
-              },
-              "runtimeConfiguration": { "contentTransfer": { "transferMode": "Chunked" } }
-            },
-            "Initialize_variable": {
+            "1.InitializeVariable": {
               "type": "InitializeVariable",
               "inputs": {
                 "variables": [
@@ -157,23 +166,49 @@
                 ]
               }
             },
-            "Put_a_message_on_a_queue": {
-              "runAfter": { "Create_blob": [ "Succeeded" ] },
+            "2.CreateBlob": {
+              "runAfter": { "1.InitializeVariable": [ "Succeeded" ] },
               "type": "ApiConnection",
               "inputs": {
-                "body": "@variables('name')",
-                "host": { "connection": { "name": "@parameters('$connections')['azurequeues']['connectionId']" } },
+                "body": "@{triggerBody()}",
+                "host": { "connection": { "name": "@parameters('$connections')['azureblob']['connectionId']" } },
                 "method": "post",
-                "path": "/@{encodeURIComponent('todo')}/messages"
+                "path": "/datasets/default/files",
+                "queries": {
+                  "folderPath": "/todo",
+                  "name": "@variables('name')",
+                  "queryParametersSingleEncoded": true
+                }
+              },
+              "runtimeConfiguration": { "contentTransfer": { "transferMode": "Chunked" } }
+            },
+            "3.InsertEntity": {
+              "runAfter": { "2.CreateBlob": [ "Succeeded" ] },
+              "type": "ApiConnection",
+              "inputs": {
+                "body": "@{concat('{ \"PartitionKey\":\"master\", \"RowKey\":\"', variables('name'),'\", \"Status\":\"NotStarted\", \"CallBackUrl\":', if(equals(triggerOutputs()['headers']?['Callback-Url'], null), 'null', concat('\"', triggerOutputs()['headers']['Callback-Url'], '\"')), ' }')}",
+                "host": { "connection": { "name": "@parameters('$connections')['azuretables']['connectionId']" } },
+                "method": "post",
+                "path": "/Tables/status/entities"
               }
             },
-            "Response": {
-              "runAfter": { "Put_a_message_on_a_queue": [ "Succeeded" ] },
+            "4.PutAMessageOnAQueue": {
+              "runAfter": { "3.InsertEntity": [ "Succeeded" ] },
+              "type": "ApiConnection",
+              "inputs": {
+                "body": "@{variables('name')}",
+                "host": { "connection": { "name": "@parameters('$connections')['azurequeues']['connectionId']" } },
+                "method": "post",
+                "path": "/todo/messages"
+              }
+            },
+            "5.Response": {
+              "runAfter": { "4.PutAMessageOnAQueue": [ "Succeeded" ] },
               "type": "Response",
               "kind": "Http",
               "inputs": {
-                "body": "@concat('{ \"key\":\"', variables('name'),'\" }')",
-                "headers": { "content-type": "application/json" },
+                "body": "@{concat('{ \"key\":\"', variables('name'),'\" }')}",
+                "headers": { "Content-Type": "application/json" },
                 "schema": {
                   "properties": { "key": { "type": "string" } },
                   "type": "object"
@@ -188,11 +223,15 @@
             "value": {
               "azureblob": {
                 "connectionId": "[resourceId('Microsoft.Web/connections', variables('blobConnectionName'))]",
-                "id": "[variables('storageBlobApiId')]"
+                "id": "[variables('blobConnectionApiId')]"
               },
               "azurequeues": {
                 "connectionId": "[resourceId('Microsoft.Web/connections', variables('queueConnectionName'))]",
-                "id": "[variables('storageQueueApiId')]"
+                "id": "[variables('queueConnectionApiId')]"
+              },
+              "azuretables": {
+                "connectionId": "[resourceId('Microsoft.Web/connections', variables('tableConnectionName'))]",
+                "id": "[variables('tableConnectionApiId')]"
               }
             }
           }
@@ -201,7 +240,8 @@
       "dependsOn": [
         "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
         "[resourceId('Microsoft.Web/connections', variables('blobConnectionName'))]",
-        "[resourceId('Microsoft.Web/connections', variables('queueConnectionName'))]"
+        "[resourceId('Microsoft.Web/connections', variables('queueConnectionName'))]",
+        "[resourceId('Microsoft.Web/connections', variables('tableConnectionName'))]"
       ]
     }
   ]

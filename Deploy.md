@@ -127,8 +127,9 @@ $deploy = New-AzureRMResourceGroupDeployment `
 $storageName = $deploy.Outputs['storageName'].Value
 $storageKey = $deploy.Outputs['storageKey'].Value
 $ctx = New-AzureStorageContext -StorageAccountName $storageName -StorageAccountKey $storageKey
- New-AzureStorageQueue –Name 'todo' -Context $ctx | Out-Null
- New-AzureStorageQueue –Name 'done' -Context $ctx | Out-Null
+New-AzureStorageQueue –Name 'todo' -Context $ctx | Out-Null
+New-AzureStorageQueue –Name 'done' -Context $ctx | Out-Null
+New-AzureStorageTable –Name 'status' -Context $ctx | Out-Null
 ```
 8. Build the secrets file for the **Worker**
 ```{posh}
@@ -148,7 +149,7 @@ Set-Content -Path ./Worker/secrets.ini -Value $content
 $acceptRequestName = $deploy.Outputs['acceptRequestName'].Value
 $acceptUrl = Get-AzureRmLogicAppTriggerCallbackUrl -ResourceGroupName $resourceGroupName -Name $acceptRequestName -TriggerName 'manual'
 Set-Content -Path ./sample.txt -Value 'xxxxxxxx'
-$response = Invoke-WebRequest -Uri $($acceptUrl.Value) -Method Post -InFile ./sample.txt -Headers @{ callback = '' }
+$response = Invoke-WebRequest -Uri $($acceptUrl.Value) -Method Post -InFile ./sample.txt -Headers @{ 'Callback-Url' = 'xxx' }
 Remove-Item ./sample.txt
 ```
 
