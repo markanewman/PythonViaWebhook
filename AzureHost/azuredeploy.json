@@ -8,6 +8,7 @@
     "blobConnectionApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azureblob')]",
     "queueConnectionName": "Connection-AzureQueue",
     "queueConnectionApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azurequeues')]",
+    "registryName": "[uniqueString(resourceGroup().id)]",
     "storageName": "[uniqueString(resourceGroup().id)]",
     "tableConnectionName": "Connection-AzureTable",
     "tableConnectionApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azuretables')]"
@@ -40,6 +41,14 @@
     "queueConnectionApiId": {
       "type": "string",
       "value": "[variables('queueConnectionApiId')]"
+    },
+    "registryKey": {
+      "type": "string",
+      "value": "[listCredentials(resourceId('Microsoft.ContainerRegistry/registries', variables('registryName')), '2017-10-01').passwords[0].value]"
+    },
+    "registryName": {
+      "type": "string",
+      "value": "[variables('registryName')]"
     },
     "storageKey": {
       "type": "string",
@@ -81,6 +90,14 @@
           "dependsOn": [ "[variables('storageName')]" ]
         }
       ]
+    },
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "sku": { "name": "Basic" },
+      "name": "[variables('registryName')]",
+      "apiVersion": "2017-10-01",
+      "location": "[resourceGroup().location]",
+      "properties": { "adminUserEnabled": true }
     },
     {
       "type": "Microsoft.Insights/Components",

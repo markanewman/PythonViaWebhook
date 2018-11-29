@@ -120,7 +120,7 @@ $deploy = New-AzureRMResourceGroupDeployment `
 	-TemplateFile './AzureHost/azuredeploy.json' `
 	-Verbose
 ```
-7. Add in the queues
+7. Add in the queues/table
     * They cannot be automaticaly setup by in the [ARM Template][arm] _yet_
 ```{posh}
 $storageName = $deploy.Outputs['storageName'].Value
@@ -138,6 +138,22 @@ iKey = $ikey
 AccountName = $storageName
 AccountKey = $storageKey"
 Set-Content -Path ./Worker/secrets.ini -Value $content
+```
+9. Build the [Docker][docker] image
+```{posh}
+$imageName = "python-via-webhook"
+docker build -t $imageName -f ./Docker/Dockerfile .
+```
+10. Send the [Docker][docker] image to [Azure][azure]
+   * This login process is the [recomended](https://docs.docker.com/engine/reference/commandline/login/#parent-command) method
+```{posh}
+$registryName = $deploy.Outputs['registryName'].Value
+$registryHost = "$registryName.azurecr.io"
+Set-Content -Path ./login.secrets -Value $($deploy.Outputs['registryKey'].Value)
+cat ./login.secrets | docker login $registryHost -u $registryName --password-stdin
+Remove-Item ./login.secrets
+docker tag $imageName "$registryHost/$imageName"
+docker push "$registryHost/$imageName"
 ```
 
 ## Act
@@ -161,14 +177,6 @@ Remove-Item ./sample.txt
  $response.StatusCode
  $response.Content | ConvertFrom-Json
 ```
-
-
-
-
-
-
-
-
 
 
 
