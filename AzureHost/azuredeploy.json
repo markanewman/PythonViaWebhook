@@ -6,10 +6,13 @@
     "appInsightsName": "[resourceGroup().name]",
     "blobConnectionName": "Connection-AzureBlob",
     "blobConnectionApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azureblob')]",
+    "notifyResultName": "NotifyResult",
+    "processRequestName": "ProcessRequest",
     "queueConnectionName": "Connection-AzureQueue",
     "queueConnectionApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azurequeues')]",
     "registryName": "[uniqueString(resourceGroup().id)]",
     "storageName": "[uniqueString(resourceGroup().id)]",
+    "surfaceResultName": "SurfaceResult",
     "tableConnectionName": "Connection-AzureTable",
     "tableConnectionApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azuretables')]"
   },
@@ -34,6 +37,14 @@
       "type": "string",
       "value": "[variables('blobConnectionApiId')]"
     },
+    "notifyResultName": {
+      "type": "string",
+      "value": "[variables('notifyResultName')]"
+    },
+    "processRequestName": {
+      "type": "string",
+      "value": "[variables('processRequestName')]"
+    },
     "queueConnectionName": {
       "type": "string",
       "value": "[variables('queueConnectionName')]"
@@ -57,6 +68,10 @@
     "storageName": {
       "type": "string",
       "value": "[variables('storageName')]"
+    },
+    "surfaceResultName": {
+      "type": "string",
+      "value": "[variables('surfaceResultName')]"
     },
     "tableConnectionName": {
       "type": "string",
@@ -258,6 +273,148 @@
         "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
         "[resourceId('Microsoft.Web/connections', variables('blobConnectionName'))]",
         "[resourceId('Microsoft.Web/connections', variables('queueConnectionName'))]",
+        "[resourceId('Microsoft.Web/connections', variables('tableConnectionName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Logic/workflows",
+      "name": "[variables('notifyResultName')]",
+      "apiVersion": "2017-07-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": { "$connections": { "type": "Object" } },
+          "triggers": {
+            "When_there_are_messages_in_a_queue": {
+              "recurrence": {
+                "frequency": "Minute",
+                "interval": 15
+              },
+              "splitOn": "@triggerBody()?['QueueMessagesList']?['QueueMessage']",
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['azurequeues']['connectionId']"
+                  }
+                },
+                "method": "get",
+                "path": "/@{encodeURIComponent('done')}/message_trigger"
+              }
+            }
+          },
+          "actions": {}
+        },
+        "parameters": {
+          "$connections": {
+            "value": {
+              "azurequeues": {
+                "connectionId": "[resourceId('Microsoft.Web/connections', variables('queueConnectionName'))]",
+                "id": "[variables('queueConnectionApiId')]"
+              },
+              "azuretables": {
+                "connectionId": "[resourceId('Microsoft.Web/connections', variables('tableConnectionName'))]",
+                "id": "[variables('tableConnectionApiId')]"
+              }
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
+        "[resourceId('Microsoft.Web/connections', variables('queueConnectionName'))]",
+        "[resourceId('Microsoft.Web/connections', variables('tableConnectionName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Logic/workflows",
+      "name": "[variables('processRequestName')]",
+      "apiVersion": "2017-07-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": { "$connections": { "type": "Object" } },
+          "triggers": {
+            "Recurrence": {
+              "recurrence": {
+                "frequency": "Minute",
+                "interval": 15
+              },
+              "type": "Recurrence",
+              "runtimeConfiguration": { "concurrency": { "runs": 10 } }
+            }
+          },
+          "actions": {}
+        },
+        "parameters": {
+          "$connections": {
+            "value": {
+              "azurequeues": {
+                "connectionId": "[resourceId('Microsoft.Web/connections', variables('queueConnectionName'))]",
+                "id": "[variables('queueConnectionApiId')]"
+              }
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
+        "[resourceId('Microsoft.Web/connections', variables('queueConnectionName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Logic/workflows",
+      "name": "[variables('surfaceResultName')]",
+      "apiVersion": "2017-07-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": { "$connections": { "type": "Object" } },
+          "triggers": {
+            "manual": {
+              "type": "Request",
+              "kind": "Http",
+              "inputs": {
+                "method": "GET",
+                "relativePath": "{key}",
+                "schema": {}
+              }
+            }
+          },
+          "actions": {
+            "1.GetEntity": {
+              "runAfter": {},
+              "type": "ApiConnection",
+              "inputs": {
+                "host": { "connection": { "name": "@parameters('$connections')['azuretables']['connectionId']" } },
+                "method": "get",
+                "path": "/Tables/@{encodeURIComponent('status')}/entities(PartitionKey='@{encodeURIComponent('master')}',RowKey='@{encodeURIComponent(triggerOutputs()['relativePathParameters']['key'])}')"
+              }
+            }
+          }
+        },
+        "parameters": {
+          "$connections": {
+            "value": {
+              "azuretables": {
+                "connectionId": "[resourceId('Microsoft.Web/connections', variables('tableConnectionName'))]",
+                "id": "[variables('tableConnectionApiId')]"
+              }
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
         "[resourceId('Microsoft.Web/connections', variables('tableConnectionName'))]"
       ]
     }
