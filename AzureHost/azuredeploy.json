@@ -239,7 +239,7 @@
               "type": "Response",
               "kind": "Http",
               "inputs": {
-                "body": "@{concat('{ \"key\":\"', variables('name'),'\" }')}",
+                "body": "@{concat('{ \"key\":\"', variables('name'),'\", \"status\":\"Processing\" }')}",
                 "headers": { "Content-Type": "application/json" },
                 "schema": {
                   "properties": { "key": { "type": "string" } },
