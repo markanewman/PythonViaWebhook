@@ -291,7 +291,7 @@
             "When_there_are_messages_in_a_queue": {
               "recurrence": {
                 "frequency": "Minute",
-                "interval": 15
+                "interval": 5
               },
               "splitOn": "@triggerBody()?['QueueMessagesList']?['QueueMessage']",
               "type": "ApiConnection",
@@ -344,7 +344,7 @@
             "Recurrence": {
               "recurrence": {
                 "frequency": "Minute",
-                "interval": 15
+                "interval": 5
               },
               "type": "Recurrence",
               "runtimeConfiguration": { "concurrency": { "runs": 10 } }

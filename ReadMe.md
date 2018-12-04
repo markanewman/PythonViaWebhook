@@ -6,9 +6,10 @@ I also don't want to rewrite a lot.
 
 # Parts
 
-There are 3 parts to this project (listed below) that incrementally build on top of each other.
+There are three (3) parts to this project (listed below) that incrementally build on top of each other.
 Deploy steps can be found [here](./Deploy.md).
-They are aranged in [AAA](http://wiki.c2.com/?ArrangeActAssert) form for understanding and experimentation.
+An explination of the [data flow](./DataFlow.md) is also provided.
+Tests of the data flow are aranged in [AAA](http://wiki.c2.com/?ArrangeActAssert) form for understanding and experimentation.
 
 1. [Worker](./Worker)
 2. [Docker](./Docker)
