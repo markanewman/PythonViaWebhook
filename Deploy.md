@@ -142,12 +142,13 @@ AccountName = $storageName
 AccountKey = $storageKey"
 Set-Content -Path ./Worker/secrets.ini -Value $content
 ```
-9. Build the [Docker][docker] image
+9. Make sure [Docker][docker] Desktop is started
+10. Build the [Docker][docker] image
 ```{posh}
 $imageName = $deploy.Outputs['imageName'].Value
 docker build -t $imageName -f ./Docker/Dockerfile .
 ```
-10. Send the [Docker][docker] image to [Azure][azure]
+11. Send the [Docker][docker] image to [Azure][azure]
    * This login process is the [recomended](https://docs.docker.com/engine/reference/commandline/login/#parent-command) method
 ```{posh}
 $registryName = $deploy.Outputs['registryName'].Value
