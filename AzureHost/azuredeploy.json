@@ -484,7 +484,7 @@
                   "type": "ApiConnection"
                 }
               },
-              "expression": { "and": [ { "greaterOrEquals": [ "@length(body('2.GetMessages')?['QueueMessagesList'])", 1 ] } ] },
+              "expression": { "and": [ { "greaterOrEquals": [ "@length(body('2.GetMessages')?['QueueMessagesList']?['QueueMessage'])", 1 ] } ] },
               "runAfter": { "2.GetMessages": [ "Succeeded" ] },
               "type": "If"
             }
