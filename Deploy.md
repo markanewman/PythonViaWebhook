@@ -113,7 +113,11 @@ $deploy = New-AzureRMResourceGroupDeployment `
 	-TemplateFile './AzureHost/azuredeploy.json' `
 	-Verbose
 ```
-6. OAuth the Container service
+6. OAuth the [Azure Container Instance][aci]
+   * We can bake in the authentication of the 3 [storage][storage] conectors directly into the [ARM Termplate][arm].
+     The conector for the [Azure Container Instance][aci] needs either an application registration or an OAuth flow.
+	 In this case making the application registration adds a hidden resource that can easly be forgoten.
+	 So don't use that one.
 ```{posh}
 . ./AzureHost/OAuthHelper.ps1 `
 	-resourceGroupName $resourceGroupName `
@@ -158,10 +162,10 @@ docker push "$registryHost/$imageName"
 ## Validate Azure Host
 
 1. Check the [Azure Portal](https://portal.azure.com).
-   * The resource group should contain 10 items.
+   * The resource group should contain 11 items.
    * The container registery should contain the `python-via-webhook` repositery
 
-
+[aci]: https://docs.microsoft.com/en-us/connectors/aci/
 [arm]: https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-overview
 [appinsights]: https://docs.microsoft.com/en-us/azure/application-insights/app-insights-overview
 [azure]: https://azure.microsoft.com
