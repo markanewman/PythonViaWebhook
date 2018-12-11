@@ -1,4 +1,5 @@
 {
+  "NotifyPoll":  5,
   "ProcessStartInterval": 5,
   "ProcessCompletePoll": 5,
   "ProcessTimeout": "PT1H"

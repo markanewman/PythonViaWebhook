@@ -250,7 +250,7 @@
               "runAfter": { "2.CreateBlob": [ "Succeeded" ] },
               "type": "ApiConnection",
               "inputs": {
-                "body": "@{concat('{ \"PartitionKey\":\"master\", \"RowKey\":\"', variables('name'),'\", \"Status\":\"Processing\", \"CallBackUrl\":', if(equals(triggerOutputs()['headers']?['CallbackUrl'], null), 'null', concat('\"', triggerOutputs()['headers']['Callback-Url'], '\"')), ' }')}",
+                "body": "@{concat('{ \"PartitionKey\":\"master\", \"RowKey\":\"', variables('name'),'\", \"Status\":\"Processing\", \"CallBackUrl\":', if(equals(triggerOutputs()['headers']?['CallbackUrl'], null), 'null', concat('\"', triggerOutputs()['headers']['CallbackUrl'], '\"')), ' }')}",
                 "host": { "connection": { "name": "@parameters('$connections')['azuretables']['connectionId']" } },
                 "method": "post",
                 "path": "/Tables/status/entities"
@@ -323,22 +323,54 @@
             "When_there_are_messages_in_a_queue": {
               "recurrence": {
                 "frequency": "Minute",
-                "interval": 5
+                "interval": "[int(parameters('timing').NotifyPoll)]"
               },
               "splitOn": "@triggerBody()?['QueueMessagesList']?['QueueMessage']",
               "type": "ApiConnection",
               "inputs": {
-                "host": {
-                  "connection": {
-                    "name": "@parameters('$connections')['azurequeues']['connectionId']"
-                  }
-                },
+                "host": { "connection": { "name": "@parameters('$connections')['azurequeues']['connectionId']" } },
                 "method": "get",
-                "path": "/@{encodeURIComponent('done')}/message_trigger"
+                "path": "/done/message_trigger"
               }
             }
           },
-          "actions": {}
+          "actions": {
+            "1.GetEntity": {
+              "inputs": {
+                "host": { "connection": { "name": "@parameters('$connections')['azuretables']['connectionId']" } },
+                "method": "get",
+                "path": "/Tables/status/entities(PartitionKey='master',RowKey='@{triggerBody()?['MessageText']}')"
+              },
+              "type": "ApiConnection"
+            },
+            "2.CompleteRequest": {
+              "inputs": {
+                "body": { "Status": "Done" },
+                "headers": { "If-Match": "*" },
+                "host": { "connection": { "name": "@parameters('$connections')['azuretables']['connectionId']" } },
+                "method": "put",
+                "path": "/Tables/status/entities/etag(PartitionKey='master',RowKey='@{triggerBody()?['MessageText']}')"
+              },
+              "runAfter": { "1.GetEntity": [ "Succeeded" ] },
+              "type": "ApiConnection"
+            },
+            "3.IfCallback": {
+              "actions": {},
+              "expression": { "and": [ { "contains": [ "@body('1.GetEntity')", "CallBackUrl" ] } ] },
+              "runAfter": { "2.CompleteRequest": [ "Succeeded" ] },
+              "type": "If"
+            },
+            "4.DeleteMessage": {
+              "inputs": {
+                "host": { "connection": { "name": "@parameters('$connections')['azurequeues']['connectionId']" } },
+                "method": "delete",
+                "path": "/done/messages/@{triggerBody()?['MessageId']}",
+                "queries": { "popreceipt": "@triggerBody()?['PopReceipt']" }
+              },
+              "runAfter": { "3.IfCallback": [ "Succeeded" ] },
+              "type": "ApiConnection"
+            }
+          }
         },
         "parameters": {
           "$connections": {
