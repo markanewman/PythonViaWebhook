@@ -250,7 +250,12 @@
               "runAfter": { "2.CreateBlob": [ "Succeeded" ] },
               "type": "ApiConnection",
               "inputs": {
-                "body": "@{concat('{ \"PartitionKey\":\"master\", \"RowKey\":\"', variables('name'),'\", \"Status\":\"Processing\", \"CallBackUrl\":', if(equals(triggerOutputs()['headers']?['CallbackUrl'], null), 'null', concat('\"', triggerOutputs()['headers']['CallbackUrl'], '\"')), ' }')}",
+                "body": {
+                  "PartitionKey": "master",
+                  "RowKey": "@{variables('name')}",
+                  "Status": "Processing",
+                  "CallBackUrl": "@if(equals(triggerOutputs()['headers']?['CallbackUrl'], null), 'null', concat('\"', triggerOutputs()['headers']['CallbackUrl'], '\"'))"
+                },
                 "host": { "connection": { "name": "@parameters('$connections')['azuretables']['connectionId']" } },
                 "method": "post",
                 "path": "/Tables/status/entities"
@@ -271,7 +276,11 @@
               "type": "Response",
               "kind": "Http",
               "inputs": {
-                "body": "@{concat('{ \"key\":\"', variables('name'),'\", \"status\":\"Processing\" }')}",
+                "body": {
+                  "key": "@{variables('name')}",
+                  "status": "Processing",
+                  "statusUrl":  "xxx"
+                },
                 "headers": { "Content-Type": "application/json" },
                 "schema": {
                   "properties": { "key": { "type": "string" } },
@@ -339,17 +348,20 @@
               "inputs": {
                 "host": { "connection": { "name": "@parameters('$connections')['azuretables']['connectionId']" } },
                 "method": "get",
-                "path": "/Tables/status/entities(PartitionKey='master',RowKey='@{triggerBody()?['MessageText']}')"
+                "path": "/Tables/status/entities(PartitionKey='@{encodeURIComponent('master')}',RowKey='@{encodeURIComponent(triggerBody()?['MessageText'])}')"
               },
               "type": "ApiConnection"
             },
             "2.CompleteRequest": {
               "inputs": {
-                "body": { "Status": "Done" },
+                "body": {
+                  "Status": "Done",
+                  "CallBackUrl": "@if(equals(body('1.GetEntity')?['CallBackUrl'], null), 'null', concat('\"', body('1.GetEntity')['CallBackUrl'], '\"'))"
+                },
                 "headers": { "If-Match": "*" },
                 "host": { "connection": { "name": "@parameters('$connections')['azuretables']['connectionId']" } },
                 "method": "put",
-                "path": "/Tables/status/entities/etag(PartitionKey='master',RowKey='@{triggerBody()?['MessageText']}')"
+                "path": "/Tables/status/entities/etag(PartitionKey='@{encodeURIComponent('master')}',RowKey='@{encodeURIComponent(triggerBody()?['MessageText'])}')"
               },
               "runAfter": { "1.GetEntity": [ "Succeeded" ] },
               "type": "ApiConnection"
