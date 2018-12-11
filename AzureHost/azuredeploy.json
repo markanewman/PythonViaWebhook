@@ -4,17 +4,21 @@
   "variables": {
     "acceptRequestName": "AcceptRequest",
     "appInsightsName": "[resourceGroup().name]",
-    "blobConnectionName": "Connection-AzureBlob",
+    "azureContainerConnectionApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/aci')]",
+    "azureContainerConnectionName": "Connection-AzureContainer",
+    "azureContainerGroupPath": "/subscriptions/0f73e075-f06d-4c48-83b4-3a5e8caa6a30/resourceGroups/PythonViaWebhook/providers/Microsoft.ContainerInstance/containerGroups/@{variables('name')}",
     "blobConnectionApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azureblob')]",
+    "blobConnectionName": "Connection-AzureBlob",
+    "imageName": "python-via-webhook",
     "notifyResultName": "NotifyResult",
     "processRequestName": "ProcessRequest",
-    "queueConnectionName": "Connection-AzureQueue",
     "queueConnectionApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azurequeues')]",
+    "queueConnectionName": "Connection-AzureQueue",
     "registryName": "[uniqueString(resourceGroup().id)]",
     "storageName": "[uniqueString(resourceGroup().id)]",
     "surfaceResultName": "SurfaceResult",
-    "tableConnectionName": "Connection-AzureTable",
-    "tableConnectionApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azuretables')]"
+    "tableConnectionApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azuretables')]",
+    "tableConnectionName": "Connection-AzureTable"
   },
   "outputs": {
     "acceptRequestName": {
@@ -29,13 +33,29 @@
       "type": "string",
       "value": "[variables('appInsightsName')]"
     },
-    "blobConnectionName": {
+    "azureContainerConnectionApiId": {
       "type": "string",
-      "value": "[variables('blobConnectionName')]"
+      "value": "[variables('azureContainerConnectionApiId')]"
+    },
+    "azureContainerConnectionName": {
+      "type": "string",
+      "value": "[variables('azureContainerConnectionName')]"
+    },
+    "azureContainerGroupPath": {
+      "type": "string",
+      "value": "[variables('azureContainerGroupPath')]"
     },
     "blobConnectionApiId": {
       "type": "string",
       "value": "[variables('blobConnectionApiId')]"
+    },
+    "blobConnectionName": {
+      "type": "string",
+      "value": "[variables('blobConnectionName')]"
+    },
+    "imageName": {
+      "type": "string",
+      "value": "[variables('imageName')]"
     },
     "notifyResultName": {
       "type": "string",
@@ -45,13 +65,13 @@
       "type": "string",
       "value": "[variables('processRequestName')]"
     },
-    "queueConnectionName": {
-      "type": "string",
-      "value": "[variables('queueConnectionName')]"
-    },
     "queueConnectionApiId": {
       "type": "string",
       "value": "[variables('queueConnectionApiId')]"
+    },
+    "queueConnectionName": {
+      "type": "string",
+      "value": "[variables('queueConnectionName')]"
     },
     "registryKey": {
       "type": "string",
@@ -73,13 +93,13 @@
       "type": "string",
       "value": "[variables('surfaceResultName')]"
     },
-    "tableConnectionName": {
-      "type": "string",
-      "value": "[variables('tableConnectionName')]"
-    },
     "tableConnectionApiId": {
       "type": "string",
       "value": "[variables('tableConnectionApiId')]"
+    },
+    "tableConnectionName": {
+      "type": "string",
+      "value": "[variables('tableConnectionName')]"
     }
   },
   "resources": [
@@ -121,6 +141,17 @@
       "apiVersion": "2015-05-01",
       "location": "[resourceGroup().location]",
       "properties": { "Application_Type": "other" }
+    },
+    {
+      "type": "Microsoft.Web/connections",
+      "name": "[variables('azureContainerConnectionName')]",
+      "apiVersion": "2016-06-01",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[variables('azureContainerConnectionName')]",
+        "api": { "id": "[variables('azureContainerConnectionApiId')]" }
+      },
+      "dependsOn": [ "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]" ]
     },
     {
       "type": "Microsoft.Web/connections",
@@ -350,7 +381,114 @@
               "runtimeConfiguration": { "concurrency": { "runs": 10 } }
             }
           },
-          "actions": {}
+          "actions": {
+            "1.InitializeVariable": {
+              "inputs": {
+                "variables": [
+                  {
+                    "name": "name",
+                    "type": "String",
+                    "value": "@{guid()}"
+                  }
+                ]
+              },
+              "type": "InitializeVariable"
+            },
+            "2.GetMessages": {
+              "inputs": {
+                "host": { "connection": { "name": "@parameters('$connections')['azurequeues']['connectionId']" } },
+                "method": "get",
+                "path": "/todo/messages",
+                "queries": {
+                  "numofmessages": "1",
+                  "visibilitytimeout": "1"
+                }
+              },
+              "runAfter": { "1.InitializeVariable": [ "Succeeded" ] },
+              "type": "ApiConnection"
+            },
+            "3.IfQueueHasMessages": {
+              "actions": {
+                "4.CreateContainerGroup": {
+                  "inputs": {
+                    "body": {
+                      "location": "[resourceGroup().location]",
+                      "properties": {
+                        "containers": [
+                          {
+                            "name": "@variables('name')",
+                            "properties": {
+                              "image": "[concat(variables('registryName'), '.azurecr.io/', variables('imageName'), ':latest')]",
+                              "resources": {
+                                "requests": {
+                                  "cpu": 2,
+                                  "memoryInGB": 3.5
+                                }
+                              }
+                            }
+                          }
+                        ],
+                        "imageRegistryCredentials": [
+                          {
+                            "password": "[listCredentials(resourceId('Microsoft.ContainerRegistry/registries', variables('registryName')), '2017-10-01').passwords[0].value]",
+                            "server": "[concat(variables('registryName'), '.azurecr.io')]",
+                            "username": "[variables('registryName')]"
+                          }
+                        ],
+                        "osType": "Linux",
+                        "restartPolicy": "OnFailure"
+                      }
+                    },
+                    "host": { "connection": { "name": "@parameters('$connections')['aci']['connectionId']" } },
+                    "method": "put",
+                    "path": "[variables('azureContainerGroupPath')]",
+                    "queries": { "x-ms-api-version": "2017-10-01-preview" }
+                  },
+                  "type": "ApiConnection"
+                },
+                "5.UntilDone": {
+                  "actions": {
+                    "6.Delay": {
+                      "inputs": {
+                        "interval": {
+                          "count": 5,
+                          "unit": "Minute"
+                        }
+                      },
+                      "type": "Wait"
+                    },
+                    "7.GetContainerGroupProperties": {
+                      "inputs": {
+                        "host": { "connection": { "name": "@parameters('$connections')['aci']['connectionId']" } },
+                        "method": "get",
+                        "path": "[variables('azureContainerGroupPath')]",
+                        "queries": { "x-ms-api-version": "2017-10-01-preview" }
+                      },
+                      "runAfter": { "6.Delay": [ "Succeeded" ] },
+                      "type": "ApiConnection"
+                    }
+                  },
+                  "expression": "@equals(body('7.GetContainerGroupProperties')?['properties']?['instanceView']?['state'], 'Succeeded')",
+                  "limit": { "timeout": "PT1H" },
+                  "runAfter": { "4.CreateContainerGroup": [ "Succeeded" ] },
+                  "type": "Until"
+                },
+                "8.DeleteContainerGroup": {
+                  "inputs": {
+                    "host": { "connection": { "name": "@parameters('$connections')['aci']['connectionId']" } },
+                    "method": "delete",
+                    "path": "[variables('azureContainerGroupPath')]",
+                    "queries": { "x-ms-api-version": "2017-10-01-preview" }
+                  },
+                  "runAfter": { "5.UntilDone": [ "Succeeded" ] },
+                  "type": "ApiConnection"
+                }
+              },
+              "expression": { "and": [ { "greaterOrEquals": [ "@length(body('2.GetMessages')?['QueueMessagesList'])", 1 ] } ] },
+              "runAfter": { "2.GetMessages": [ "Succeeded" ] },
+              "type": "If"
+            }
+          }
         },
         "parameters": {
           "$connections": {
@@ -358,6 +496,10 @@
               "azurequeues": {
                 "connectionId": "[resourceId('Microsoft.Web/connections', variables('queueConnectionName'))]",
                 "id": "[variables('queueConnectionApiId')]"
+              },
+              "aci": {
+                "connectionId": "[resourceId('Microsoft.Web/connections', variables('azureContainerConnectionName'))]",
+                "id": "[variables('azureContainerConnectionApiId')]"
               }
             }
           }

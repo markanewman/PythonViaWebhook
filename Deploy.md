@@ -134,7 +134,7 @@ Set-Content -Path ./Worker/secrets.ini -Value $content
 ```
 8. Build the [Docker][docker] image
 ```{posh}
-$imageName = "python-via-webhook"
+$imageName = $deploy.Outputs['imageName'].Value
 docker build -t $imageName -f ./Docker/Dockerfile .
 ```
 9. Send the [Docker][docker] image to [Azure][azure]
