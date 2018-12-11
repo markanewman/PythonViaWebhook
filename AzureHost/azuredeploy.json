@@ -1,6 +1,7 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
+  "parameters": { "timing": { "type": "object" } },
   "variables": {
     "acceptRequestName": "AcceptRequest",
     "appInsightsName": "[resourceGroup().name]",
@@ -375,7 +376,7 @@
             "Recurrence": {
               "recurrence": {
                 "frequency": "Minute",
-                "interval": 5
+                "interval": "[int(parameters('timing').ProcessStartInterval)]"
               },
               "type": "Recurrence",
               "runtimeConfiguration": { "concurrency": { "runs": 10 } }
@@ -451,7 +452,7 @@
                     "6.Delay": {
                       "inputs": {
                         "interval": {
-                          "count": 5,
+                          "count": "[int(parameters('timing').ProcessCompletePoll)]",
                           "unit": "Minute"
                         }
                       },
@@ -469,7 +470,7 @@
                     }
                   },
                   "expression": "@equals(body('7.GetContainerGroupProperties')?['properties']?['instanceView']?['state'], 'Succeeded')",
-                  "limit": { "timeout": "PT1H" },
+                  "limit": { "timeout": "[parameters('timing').ProcessTimeout]" },
                   "runAfter": { "4.CreateContainerGroup": [ "Succeeded" ] },
                   "type": "Until"
                 },

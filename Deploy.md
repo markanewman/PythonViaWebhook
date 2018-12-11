@@ -106,11 +106,17 @@ New-AzureRmResourceGroup -Name $resourceGroupName -Location $location -Force
 ```
 5. Deploy the [Azure resources][arm]
 ```{posh}
+$timing = @{}
+Get-Content -Raw -Path './AzureHost/timing.json' | `
+	ConvertFrom-Json | `
+	ForEach-Object { $_.psobject.properties } | `
+	ForEach-Object { $timing[$_.Name] = $_.Value }
 $deploy = New-AzureRMResourceGroupDeployment `
 	-Name $("AzureHost-" + $(Get-Date -F 'yyyyMMddHHmmss')) `
 	-ResourceGroupName $resourceGroupName `
 	-Mode 'Incremental' `
 	-TemplateFile './AzureHost/azuredeploy.json' `
+	-timing $timing `
 	-Verbose
 ```
 6. OAuth the [Azure Container Instance][aci]

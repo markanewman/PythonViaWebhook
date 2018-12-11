@@ -1,0 +1,5 @@
+{
+  "ProcessStartInterval": 5,
+  "ProcessCompletePoll": 5,
+  "ProcessTimeout": "PT1H"
+}
