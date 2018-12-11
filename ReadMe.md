@@ -8,8 +8,8 @@ I also don't want to rewrite a lot.
 
 There are three (3) parts to this project (listed below) that incrementally build on top of each other.
 Deploy steps can be found [here](./Deploy.md).
-An explination of the [data flow](./DataFlow.md) is also provided.
-Tests of the data flow are aranged in [AAA](http://wiki.c2.com/?ArrangeActAssert) form for understanding and experimentation.
+An explination of the [data flow][dataflow] is also provided.
+Tests of the [data flow][dataflow] are aranged in [AAA](http://wiki.c2.com/?ArrangeActAssert) form for understanding and experimentation.
 
 1. [Worker](./Worker)
 2. [Docker](./Docker)
@@ -26,3 +26,5 @@ Some resources were complete, some not so much, but they all helped in their own
 * [Deploy Logic Apps & API Connection with ARM](https://www.bruttin.com/2017/06/13/deploy-logic-app-with-arm.html)
 * [Azure Container Instance (Preview)](https://docs.microsoft.com/en-us/connectors/aci/)
 * [LogicAppConnectionAuth](https://github.com/logicappsio/LogicAppConnectionAuth)
+
+[dataflow]: ./DataFlow.md

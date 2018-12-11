@@ -3,7 +3,7 @@
 As part of the initial setup, the service owner needs to provide the service user a URL and an access token.
 
 1. The client makes a HTTP POST to the [Webhook][webhook] URL
-   * An optional callback URL is supported via a header value (Callback-Url)
+   * An optional callback URL is supported via a header value (CallbackUrl)
 2. The [Webhook][webhook] writes the information to [blob storage][blob], places a message in the [queue][queue], and returns 202(accepted) with location where the result will eventualy be placed.
 3. A [Docker](https://docs.docker.com/get-started/) container is started and processing begins
     1. The file information is retrieved from [blob storage][blob] and copied localy to the container.
@@ -37,8 +37,8 @@ $acceptRequestName = $deploy.Outputs['acceptRequestName'].Value
 ### Act
 
 1. **Post** a sample file to the service.
-   Adding a header value ('Callback-Url') allows the service to webhook to that url when the process is done.
-   Add `-Headers @{ 'Callback-Url' = 'https://my.fqdn.com' }` to the `Invoke-WebRequest` to acomplish this
+   Adding a header value ('CallbackUrl') allows the service to webhook to that url when the process is done.
+   Add `-Headers @{ 'CallbackUrl' = 'https://my.fqdn.com' }` to the `Invoke-WebRequest` to acomplish this
 ```{posh}
 $acceptUrl = Get-AzureRmLogicAppTriggerCallbackUrl -ResourceGroupName $resourceGroupName -Name $acceptRequestName -TriggerName 'manual'
 Set-Content -Path ./sample.txt -Value 'xxxxxxxx'
