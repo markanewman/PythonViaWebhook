@@ -113,7 +113,13 @@ $deploy = New-AzureRMResourceGroupDeployment `
 	-TemplateFile './AzureHost/azuredeploy.json' `
 	-Verbose
 ```
-6. Add in the queues/table
+6. OAuth the Container service
+```{posh}
+. ./AzureHost/OAuthHelper.ps1 `
+	-resourceGroupName $resourceGroupName `
+	-connectionName $($deploy.Outputs['azureContainerConnectionName'].Value)
+```
+7. Add in the queues/table
     * They cannot be automaticaly setup by in the [ARM Template][arm] _yet_
 ```{posh}
 $storageName = $deploy.Outputs['storageName'].Value
@@ -123,7 +129,7 @@ New-AzureStorageQueue –Name 'todo' -Context $ctx | Out-Null
 New-AzureStorageQueue –Name 'done' -Context $ctx | Out-Null
 New-AzureStorageTable –Name 'status' -Context $ctx | Out-Null
 ```
-7. Build the secrets file for the **Worker**
+8. Build the secrets file for the **Worker**
 ```{posh}
 $ikey = $deploy.Outputs['appInsightsKey'].Value
 $content = "[AZURE]
@@ -132,12 +138,12 @@ AccountName = $storageName
 AccountKey = $storageKey"
 Set-Content -Path ./Worker/secrets.ini -Value $content
 ```
-8. Build the [Docker][docker] image
+9. Build the [Docker][docker] image
 ```{posh}
 $imageName = $deploy.Outputs['imageName'].Value
 docker build -t $imageName -f ./Docker/Dockerfile .
 ```
-9. Send the [Docker][docker] image to [Azure][azure]
+10. Send the [Docker][docker] image to [Azure][azure]
    * This login process is the [recomended](https://docs.docker.com/engine/reference/commandline/login/#parent-command) method
 ```{posh}
 $registryName = $deploy.Outputs['registryName'].Value
