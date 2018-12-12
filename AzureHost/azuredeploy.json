@@ -209,12 +209,20 @@
         "definition": {
           "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
           "contentVersion": "1.0.0.0",
-          "parameters": { "$connections": { "type": "Object" } },
+          "parameters": {
+            "$connections": {
+              "type": "Object",
+              "defaultValue": {}
+            }
+          },
           "triggers": {
             "manual": {
               "type": "Request",
               "kind": "Http",
-              "inputs": { "method": "POST" }
+              "inputs": {
+                "method": "POST",
+                "schema": {}
+              }
             }
           },
           "actions": {
@@ -331,7 +339,12 @@
         "definition": {
           "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
           "contentVersion": "1.0.0.0",
-          "parameters": { "$connections": { "type": "Object" } },
+          "parameters": {
+            "$connections": {
+              "type": "Object",
+              "defaultValue": {}
+            } 
+          },
           "triggers": {
             "When_there_are_messages_in_a_queue": {
               "recurrence": {
@@ -422,7 +435,12 @@
         "definition": {
           "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
           "contentVersion": "1.0.0.0",
-          "parameters": { "$connections": { "type": "Object" } },
+          "parameters": {
+            "$connections": {
+              "type": "Object",
+              "defaultValue": {}
+            }
+          },
           "triggers": {
             "Recurrence": {
               "recurrence": {
@@ -577,7 +595,12 @@
         "definition": {
           "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
           "contentVersion": "1.0.0.0",
-          "parameters": { "$connections": { "type": "Object" } },
+          "parameters": {
+            "$connections": {
+              "type": "Object",
+              "defaultValue": {}
+            }
+          },
           "triggers": {
             "manual": {
               "type": "Request",
