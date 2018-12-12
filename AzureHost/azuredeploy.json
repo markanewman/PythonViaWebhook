@@ -219,6 +219,7 @@
           },
           "actions": {
             "1.InitializeVariable": {
+              "runAfter": {},
               "type": "InitializeVariable",
               "inputs": {
                 "variables": [
@@ -279,7 +280,7 @@
                 "body": {
                   "key": "@{variables('name')}",
                   "status": "Processing",
-                  "statusUrl":  "xxx"
+                  "statusUrl": "xxx"
                 },
                 "headers": { "Content-Type": "application/json" },
                 "schema": {
@@ -345,14 +346,17 @@
           },
           "actions": {
             "1.GetEntity": {
+              "runAfter": {},
+              "type": "ApiConnection",
               "inputs": {
                 "host": { "connection": { "name": "@parameters('$connections')['azuretables']['connectionId']" } },
                 "method": "get",
                 "path": "/Tables/status/entities(PartitionKey='@{encodeURIComponent('master')}',RowKey='@{encodeURIComponent(triggerBody()?['MessageText'])}')"
-              },
-              "type": "ApiConnection"
+              }
             },
             "2.CompleteRequest": {
+              "runAfter": { "1.GetEntity": [ "Succeeded" ] },
+              "type": "ApiConnection",
               "inputs": {
                 "body": {
                   "Status": "Done",
@@ -362,25 +366,23 @@
                 "host": { "connection": { "name": "@parameters('$connections')['azuretables']['connectionId']" } },
                 "method": "put",
                 "path": "/Tables/status/entities/etag(PartitionKey='@{encodeURIComponent('master')}',RowKey='@{encodeURIComponent(triggerBody()?['MessageText'])}')"
-              },
-              "runAfter": { "1.GetEntity": [ "Succeeded" ] },
-              "type": "ApiConnection"
+              }
             },
             "3.IfCallback": {
-              "actions": {},
-              "expression": { "and": [ { "contains": [ "@body('1.GetEntity')", "CallBackUrl" ] } ] },
               "runAfter": { "2.CompleteRequest": [ "Succeeded" ] },
-              "type": "If"
+              "type": "If",
+              "expression": { "and": [ { "contains": [ "@body('1.GetEntity')", "CallBackUrl" ] } ] },
+              "actions": {}
             },
             "4.DeleteMessage": {
+              "runAfter": { "3.IfCallback": [ "Succeeded" ] },
+              "type": "ApiConnection",
               "inputs": {
                 "host": { "connection": { "name": "@parameters('$connections')['azurequeues']['connectionId']" } },
                 "method": "delete",
                 "path": "/done/messages/@{triggerBody()?['MessageId']}",
                 "queries": { "popreceipt": "@triggerBody()?['PopReceipt']" }
-              },
-              "runAfter": { "3.IfCallback": [ "Succeeded" ] },
-              "type": "ApiConnection"
+              }
             }
           }
         },
@@ -428,6 +430,8 @@
           },
           "actions": {
             "1.InitializeVariable": {
+              "runAfter": {},
+              "type": "InitializeVariable",
               "inputs": {
                 "variables": [
                   {
@@ -436,10 +440,11 @@
                     "value": "@{guid()}"
                   }
                 ]
-              },
-              "type": "InitializeVariable"
+              }
             },
             "2.GetMessages": {
+              "runAfter": { "1.InitializeVariable": [ "Succeeded" ] },
+              "type": "ApiConnection",
               "inputs": {
                 "host": { "connection": { "name": "@parameters('$connections')['azurequeues']['connectionId']" } },
                 "method": "get",
@@ -448,13 +453,16 @@
                   "numofmessages": "1",
                   "visibilitytimeout": "1"
                 }
-              },
-              "runAfter": { "1.InitializeVariable": [ "Succeeded" ] },
-              "type": "ApiConnection"
+              }
             },
             "3.IfQueueHasMessages": {
+              "runAfter": { "2.GetMessages": [ "Succeeded" ] },
+              "type": "If",
+              "expression": { "and": [ { "greaterOrEquals": [ "@length(body('2.GetMessages')?['QueueMessagesList']?['QueueMessage'])", 1 ] } ] },
               "actions": {
                 "4.CreateContainerGroup": {
+                  "runAfter": {},
+                  "type": "ApiConnection",
                   "inputs": {
                     "body": {
                       "location": "[resourceGroup().location]",
@@ -488,50 +496,47 @@
                     "method": "put",
                     "path": "[variables('azureContainerGroupPath')]",
                     "queries": { "x-ms-api-version": "2017-10-01-preview" }
-                  },
-                  "type": "ApiConnection"
+                  }
                 },
                 "5.UntilDone": {
+                  "runAfter": { "4.CreateContainerGroup": [ "Succeeded" ] },
+                  "type": "Until",
+                  "expression": "@equals(body('7.GetContainerGroupProperties')?['properties']?['instanceView']?['state'], 'Succeeded')",
+                  "limit": { "timeout": "[parameters('timing').ProcessTimeout]" },
                   "actions": {
                     "6.Delay": {
+                      "runAfter": {},
+                      "type": "Wait",
                       "inputs": {
                         "interval": {
                           "count": "[int(parameters('timing').ProcessCompletePoll)]",
                           "unit": "Minute"
                         }
-                      },
-                      "type": "Wait"
+                      }
                     },
                     "7.GetContainerGroupProperties": {
+                      "runAfter": { "6.Delay": [ "Succeeded" ] },
+                      "type": "ApiConnection",
                       "inputs": {
                         "host": { "connection": { "name": "@parameters('$connections')['aci']['connectionId']" } },
                         "method": "get",
                         "path": "[variables('azureContainerGroupPath')]",
                         "queries": { "x-ms-api-version": "2017-10-01-preview" }
-                      },
-                      "runAfter": { "6.Delay": [ "Succeeded" ] },
-                      "type": "ApiConnection"
+                      }
                     }
-                  },
-                  "expression": "@equals(body('7.GetContainerGroupProperties')?['properties']?['instanceView']?['state'], 'Succeeded')",
-                  "limit": { "timeout": "[parameters('timing').ProcessTimeout]" },
-                  "runAfter": { "4.CreateContainerGroup": [ "Succeeded" ] },
-                  "type": "Until"
+                  }
                 },
                 "8.DeleteContainerGroup": {
+                  "runAfter": { "5.UntilDone": [ "Succeeded" ] },
+                  "type": "ApiConnection",
                   "inputs": {
                     "host": { "connection": { "name": "@parameters('$connections')['aci']['connectionId']" } },
                     "method": "delete",
                     "path": "[variables('azureContainerGroupPath')]",
                     "queries": { "x-ms-api-version": "2017-10-01-preview" }
-                  },
-                  "runAfter": { "5.UntilDone": [ "Succeeded" ] },
-                  "type": "ApiConnection"
+                  }
                 }
-              },
-              "expression": { "and": [ { "greaterOrEquals": [ "@length(body('2.GetMessages')?['QueueMessagesList']?['QueueMessage'])", 1 ] } ] },
-              "runAfter": { "2.GetMessages": [ "Succeeded" ] },
-              "type": "If"
+              }
             }
           }
         },
