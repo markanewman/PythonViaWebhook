@@ -254,7 +254,7 @@
                   "PartitionKey": "master",
                   "RowKey": "@{variables('name')}",
                   "Status": "Processing",
-                  "CallBackUrl": "@if(equals(triggerOutputs()['headers']?['CallbackUrl'], null), 'null', concat('\"', triggerOutputs()['headers']['CallbackUrl'], '\"'))"
+                  "CallBackUrl": "@json(if(equals(triggerOutputs()['headers']?['CallbackUrl'], null), 'null', concat('\"', triggerOutputs()['headers']['CallbackUrl'], '\"')))"
                 },
                 "host": { "connection": { "name": "@parameters('$connections')['azuretables']['connectionId']" } },
                 "method": "post",
@@ -356,7 +356,7 @@
               "inputs": {
                 "body": {
                   "Status": "Done",
-                  "CallBackUrl": "@if(equals(body('1.GetEntity')?['CallBackUrl'], null), 'null', concat('\"', body('1.GetEntity')['CallBackUrl'], '\"'))"
+                  "CallBackUrl": "@json(if(equals(body('1.GetEntity')?['CallBackUrl'], null), 'null', concat('\"', body('1.GetEntity')['CallBackUrl'], '\"')))"
                 },
                 "headers": { "If-Match": "*" },
                 "host": { "connection": { "name": "@parameters('$connections')['azuretables']['connectionId']" } },
