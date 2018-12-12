@@ -297,14 +297,17 @@
             "value": {
               "azureblob": {
                 "connectionId": "[resourceId('Microsoft.Web/connections', variables('blobConnectionName'))]",
+                "connectionName": "[variables('blobConnectionName')]",
                 "id": "[variables('blobConnectionApiId')]"
               },
               "azurequeues": {
                 "connectionId": "[resourceId('Microsoft.Web/connections', variables('queueConnectionName'))]",
+                "connectionName": "[variables('queueConnectionName')]",
                 "id": "[variables('queueConnectionApiId')]"
               },
               "azuretables": {
                 "connectionId": "[resourceId('Microsoft.Web/connections', variables('tableConnectionName'))]",
+                "connectionName": "[variables('tableConnectionName')]",
                 "id": "[variables('tableConnectionApiId')]"
               }
             }
@@ -391,10 +394,12 @@
             "value": {
               "azurequeues": {
                 "connectionId": "[resourceId('Microsoft.Web/connections', variables('queueConnectionName'))]",
+                "connectionName": "[variables('queueConnectionName')]",
                 "id": "[variables('queueConnectionApiId')]"
               },
               "azuretables": {
                 "connectionId": "[resourceId('Microsoft.Web/connections', variables('tableConnectionName'))]",
+                "connectionName": "[variables('tableConnectionName')]",
                 "id": "[variables('tableConnectionApiId')]"
               }
             }
@@ -545,10 +550,12 @@
             "value": {
               "azurequeues": {
                 "connectionId": "[resourceId('Microsoft.Web/connections', variables('queueConnectionName'))]",
+                "connectionName": "[variables('queueConnectionName')]",
                 "id": "[variables('queueConnectionApiId')]"
               },
               "aci": {
                 "connectionId": "[resourceId('Microsoft.Web/connections', variables('azureContainerConnectionName'))]",
+                "connectionName": "[variables('azureContainerConnectionName')]",
                 "id": "[variables('azureContainerConnectionApiId')]"
               }
             }
@@ -599,6 +606,7 @@
             "value": {
               "azuretables": {
                 "connectionId": "[resourceId('Microsoft.Web/connections', variables('tableConnectionName'))]",
+                "connectionName": "[variables('tableConnectionName')]",
                 "id": "[variables('tableConnectionApiId')]"
               }
             }
