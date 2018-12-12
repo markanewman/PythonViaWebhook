@@ -7,7 +7,7 @@
     "appInsightsName": "[resourceGroup().name]",
     "azureContainerConnectionApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/aci')]",
     "azureContainerConnectionName": "Connection-AzureContainer",
-    "azureContainerGroupPath": "/subscriptions/0f73e075-f06d-4c48-83b4-3a5e8caa6a30/resourceGroups/PythonViaWebhook/providers/Microsoft.ContainerInstance/containerGroups/@{variables('name')}",
+    "azureContainerGroupPath": "[concat(resourceGroup().id, '/providers/Microsoft.ContainerInstance/containerGroups/@{variables(''name'')}')]",
     "blobConnectionApiId": "[concat(subscription().id,'/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/azureblob')]",
     "blobConnectionName": "Connection-AzureBlob",
     "imageName": "python-via-webhook",
